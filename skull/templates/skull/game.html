@@ -7,7 +7,8 @@
 <body>
 <h1>Skull Game {{ tag }}</h1>
 
-{% if msg %}<p><strong>{{ msg }}</strong></p>{% endif %}
+{% if msg %}<p>{{ msg }}</p>{% endif %}
+{% if status %}<p><strong>{{ status }}</strong></p>{% endif %}
 
 <pre>
 token: {{ token }}

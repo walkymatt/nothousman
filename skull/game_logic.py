@@ -452,6 +452,7 @@ def visible_state ( tag, token, emojify=True ):
     result['flipped'] = game.flipped
     result['skuller'] = game.skuller
     result['winner'] = game.winner
+    result['status'] = game.status
     
     result['players'] = []
     

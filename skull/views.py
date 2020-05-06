@@ -2,13 +2,19 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import reverse
 
+from .models import Game
 import skull.game_logic as GM
 
-# send messages to game clients
+# send messages to game clients to notify of state changes
 # no idea how this is going to work yet,
 # for now it's a placeholder
 def send_notification (request, tag, msg, action='refresh'):
-    pass
+    try:
+        game = Game.objects.get(pk=tag)
+        game.status = msg
+        game.save()
+    except Game.DoesNotExist:
+        pass
 
 # index page: join a game
 def index(request):
@@ -46,11 +52,12 @@ def game(request, tag):
             send_notification(request, tag, msg, action='index')
             return render(request, 'skull/index.html', { 'msg' : msg })
     else:
-        msg = 'viewing game as ' + token
+        msg = 'You are viewing this game as non-player.' if token=='nobody' else ''
         notify = False
     
     if notify:
         send_notification(request, tag, msg)
+        msg = ''
 
     state = GM.visible_state(tag, token)
     return render(request, 'skull/game.html', { **state, 'msg' : msg })

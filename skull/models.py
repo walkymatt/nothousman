@@ -9,7 +9,10 @@ class Game(models.Model):
     
     # probably don't care about these, but...
     created = models.DateTimeField(auto_now_add=True)
-    last_move = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    
+    # the most recent game state notification message
+    status = models.CharField(max_length=200, default='')
     
     # game phase
     class Stage(models.IntegerChoices):
@@ -44,7 +47,7 @@ class Game(models.Model):
     flipped = models.IntegerField(default=0)
     skuller = models.IntegerField(default=-1)
     winner = models.IntegerField(default=-1)
-    
+        
     @classmethod
     def create(cls, tag, owner_nickname):
         game = cls(tag=tag)
