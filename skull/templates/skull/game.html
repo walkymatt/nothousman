@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Skull: {{ tag }}</title>
+</head>
+<body>
+<h1>Skull Game {{ tag }}</h1>
+
+{% if msg %}<p><strong>{{ msg }}</strong></p>{% endif %}
+
+<pre>
+token: {{ token }}
+stage: {{ stage }}
+next_player: {{ next_player }}
+placed: {{ placed }}
+bidder: {{ bidder }}
+bid: {{ bid }}
+flipped: {{ flipped }}
+skuller: {{ skuller }}
+winner: {{ winner }}
+{% for player in players %}
+
+player {{ forloop.counter }}
+nickname: {{ player.nickname }}
+you: {{ player.you }}
+points: {{ player.points }}
+alive: {{ player.alive }}
+passed: {{ player.passed }}
+owner: {{ player.owner }}
+turn_order: {{ player.turn_order }}
+flipped: {{ player.flipped }}
+hand: {{ player.hand }}
+stack: {{ player.stack }}
+{% endfor %}
+</pre>
+
+<form action="{% url 'skull:game' tag %}" id="actions-form" method="post">
+{% csrf_token %}
+<input type="hidden" name="token" value="{{ token }}">
+<input type="hidden" id="move-field" name="move" value="refresh">
+<button type="submit">Refresh</button><br>
+
+{% if 'start' in actions %}
+<button type="button" id="start-button">Start Game</button>
+{% endif %}
+
+{% if 'end_round' in actions %}
+<button type="button" id="end-round-button">End Round</button>
+{% endif %}
+
+{% if 'destroy' in actions %}
+<button type="button" id="destroy-button">Destroy Game</button>
+{% endif %}
+
+<br>
+
+{% if 'place' in actions %}
+{% for card in your_hand %}
+<button type="button" id="place-{{ forloop.counter0 }}-button">Place {{ forloop.counter }}:{{ card }}</button>
+{% endfor %}
+<input type="hidden" id="card-field" name="card" value="0"><br>
+{% endif %}
+
+{% if 'bid' in actions %}
+{% for bid in possible_bids %}
+<button type="button" id="bid-{{ bid }}-button">Bid {{ bid }}</button>
+{% endfor %}
+<input type="hidden" id="bid-field" name="bid" value="0"><br>
+{% endif %}
+
+{% if 'decline' in actions %}
+<button type="button" id="decline-button">Pass</button></br>
+{% endif %}
+
+{% if 'flip' in actions %}
+{% for player in players %}
+<button type="button" id="flip-player-{{ forloop.counter }}-button">Flip {{ player.nickname }}</button>
+{% endfor %}
+<input type="hidden" id="flip-field" name="target" value=""><br>
+{% endif %}
+</form>
+
+<script>
+{% if 'start' in actions %}
+    document.querySelector("#start-button").onclick = function(e)
+    {
+        document.querySelector("#move-field").value="start";
+        document.querySelector("#actions-form").submit();
+    };
+{% endif %}
+{% if 'end_round' in actions %}
+document.querySelector("#end-round-button").onclick = function(e)
+{
+    document.querySelector("#move-field").value="end_round";
+    document.querySelector("#actions-form").submit();
+};
+{% endif %}
+{% if 'destroy' in actions %}
+    document.querySelector("#destroy-button").onclick = function(e)
+    {
+        document.querySelector("#move-field").value="destroy";
+        document.querySelector("#actions-form").submit();
+    };
+{% endif %}
+{% if 'decline' in actions %}
+    document.querySelector("#decline-button").onclick = function(e)
+    {
+        document.querySelector("#move-field").value="decline";
+        document.querySelector("#actions-form").submit();
+    };
+{% endif %}
+
+{% if 'place' in actions %}
+{% for card in your_hand %}
+    document.querySelector("#place-{{ forloop.counter0 }}-button").onclick = function(e)
+    {
+        document.querySelector("#card-field").value="{{ forloop.counter0 }}";
+        document.querySelector("#move-field").value="place";
+        document.querySelector("#actions-form").submit();
+    };
+{% endfor %}
+{% endif %}
+
+{% if 'bid' in actions %}
+{% for bid in possible_bids %}
+    document.querySelector("#bid-{{ bid }}-button").onclick = function(e)
+    {
+        document.querySelector("#bid-field").value="{{ bid }}";
+        document.querySelector("#move-field").value="bid";
+        document.querySelector("#actions-form").submit();
+    };
+{% endfor %}
+{% endif %}
+
+{% if 'flip' in actions %}
+{% for player in players %}
+    document.querySelector("#flip-player-{{ forloop.counter }}-button").onclick = function(e)
+    {
+        document.querySelector("#flip-field").value="{{ player.nickname }}";
+        document.querySelector("#move-field").value="flip";
+        document.querySelector("#actions-form").submit();
+    };
+{% endfor %}
+{% endif %}
+</script>
+
+</body>
+</html>
