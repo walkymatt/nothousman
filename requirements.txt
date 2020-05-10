@@ -1,5 +1,6 @@
 django
 django-eventstream
 django-heroku
+whitenoise
 uvicorn
 requests
