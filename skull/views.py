@@ -1,9 +1,13 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.urls import reverse
 
+from django_eventstream import send_event
+
 from .models import Game
-import skull.game_logic as GM
+from . import game_logic as GM
+
+import json
 
 # send messages to game clients to notify of state changes
 # no idea how this is going to work yet,
@@ -13,6 +17,8 @@ def send_notification (request, tag, msg, action='refresh'):
         game = Game.objects.get(pk=tag)
         game.status = msg
         game.save()
+        
+        send_event(tag, 'message', {'text':'refresh'})
     except Game.DoesNotExist:
         pass
 
@@ -24,6 +30,7 @@ def index(request):
 def game(request, tag):
     action = request.POST.get('move', None)
     token = request.POST.get('token', 'nobody')
+    how = request.POST.get('how', None)
     notify = False
     
     if action=='join':
@@ -58,6 +65,14 @@ def game(request, tag):
     if notify:
         send_notification(request, tag, msg)
         msg = ''
+    
+    msg = msg or '&nbsp;'
 
     state = GM.visible_state(tag, token)
-    return render(request, 'skull/game.html', { **state, 'msg' : msg })
+    state['msg'] = msg
+    
+    if how == 'json':
+        return JsonResponse(state)
+    else:
+        state['json_state'] = json.dumps(state)
+        return render(request, 'skull/game.html', state)

@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'channels',
+    'django_eventstream',
     'skull.apps.SkullConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -49,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_grip.GripMiddleware',
 ]
 
 ROOT_URLCONF = 'games.urls'
@@ -71,6 +73,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'games.wsgi.application'
 ASGI_APPLICATION = 'games.routing.application'
+
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],
+#         },
+#     },
+# }
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases

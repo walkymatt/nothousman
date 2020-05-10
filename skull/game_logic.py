@@ -6,26 +6,26 @@ MIN_PLAYERS = 3
 MAX_PLAYERS = 10
 WINNING_POINTS = 2
 
-EMOJIS = { '0' : '🌺', '1' : '💀', 'X' : '☣️' }
+EMOJIS = { '0' : '🌺', '1' : '💀', 'X' : '☣️', 'next' : '➡️', 'passed' : '🏳️', 'dead' : '💔' }
 
 def join ( tag, nickname ):
     '''
     Attempt to add a player to a game. If the game is in progress, this fails.
-    If the game already has a player with the same nickname, this fails.
+    If the game already has a player with the same nickname, reconnects that player.
     If the game doesn't exist, it is created and the player becomes its owner.
     '''
     try:
         game = Game.objects.get(pk=tag)
-        
-        if game.stage != Game.Stage.GATHERING:
-            return None, 'Game %s already in progress' % tag, False
-        
+
         try:
             existing = game.player_set.get(nickname=nickname)
-            return None, 'Game %s already has a player named %s' % (tag, nickname), False
+            return str(existing.token), 'Rejoining game %s as existing player %s' % (tag, nickname), False
         except Player.DoesNotExist:
             pass
-        
+
+        if game.stage != Game.Stage.GATHERING:
+            return None, 'Game %s already in progress' % tag, False
+                
         if len(game.player_set.all()) >= MAX_PLAYERS:
             return None, 'Game %s already has the maximum number of players (%i)' % (tag, MAX_PLAYERS), False
             
@@ -67,7 +67,7 @@ def get_game_and_player ( tag, token ):
 
 def start ( tag, token ):
     '''
-    Attempt to launch a game. Currently, only owner is allowed to do this.
+    Attempt to launch a game.
     '''
     game, player, err = get_game_and_player( tag, token )
     if err is not None:
@@ -76,9 +76,6 @@ def start ( tag, token ):
     if game.stage not in (Game.Stage.GATHERING, Game.Stage.OVER):
         return 'Game %s is already in progress' % tag, False
     
-    if not player.owner:
-        return '%s is not the owner of game %s' % (player.nickname, tag), False
-
     players = game.player_set.all()
     count = len(players)
     if count < MIN_PLAYERS:
@@ -328,15 +325,10 @@ def end_round ( tag, token ):
     '''
     Finalise the round, allocate a point or discard a card, kill player if appropriate,
     end game if appropriate, otherwise reset everything for next round.
-    
-    Currently, only owner is allowed to do this.
     '''
     game, player, err = get_game_and_player( tag, token )
     if err is not None:
         return err, False
-    
-    if (game.stage in (Game.Stage.FLIPPER_LOST, Game.Stage.FLIPPER_WON) and not player.owner):
-        return '%s is not the owner of game %s' % (player.nickname, tag), False
     
     flipper = game.player_set.get(turn_order=game.next_player)
     
@@ -393,17 +385,13 @@ def end_round ( tag, token ):
 def destroy ( tag, token ):
     '''
     Delete a game and all its players.
-    Currently only the owner is allowed to do this.
     '''
     game, player, err = get_game_and_player( tag, token )
     if err is not None:
         return False, err
         
-    if not player.owner:
-        return False, '%s is not the owner of game %s' % (player.nickname, tag)
-    
     game.delete()
-    return True, 'game %s deleted'
+    return True, 'game %s deleted' % tag
 
 
 def visible_state ( tag, token, emojify=True ):
@@ -430,11 +418,11 @@ def visible_state ( tag, token, emojify=True ):
             result['actions'] = ['bid', 'decline']        
         elif (stage == Game.Stage.FLIPPING) and (player.turn_order == game.next_player):
             result['actions'] = ['flip']
-        elif (stage in (Game.Stage.FLIPPER_LOST, Game.Stage.FLIPPER_WON)) and player.owner:
+        elif (stage in (Game.Stage.FLIPPER_LOST, Game.Stage.FLIPPER_WON)):
             result['actions'] = ['end_round']
-        elif (stage == Game.Stage.OVER) and player.owner:
+        elif (stage == Game.Stage.OVER):
             result['actions'] = ['start', 'destroy']            
-        elif (stage == Game.Stage.GATHERING) and (len(game.player_set.all()) >= MIN_PLAYERS) and player.owner:
+        elif (stage == Game.Stage.GATHERING) and (len(game.player_set.all()) >= MIN_PLAYERS):
             result['actions'] = ['start']            
         else:
             result['actions'] = []            
@@ -459,9 +447,14 @@ def visible_state ( tag, token, emojify=True ):
     for pp in game.player_set.all().order_by('turn_order'):
         desc = { 'nickname' : pp.nickname,  'you' : (token == str(pp.token)),
                  'points' : pp.points, 'alive' : pp.alive,
+                 'is_next' : (game.next_player != -1) and (pp.turn_order == game.next_player),
                  'passed' : pp.passed, 'owner' : pp.owner,
                  'turn_order' : pp.turn_order, 'flipped' : pp.flipped,
                  'hand' : list(pp.hand), 'stack' : list(pp.stack) }
+        
+        desc['status'] = 'dead' if (not pp.alive) else 'passed' if pp.passed else 'next' if desc['is_next'] else '&nbsp;'
+        if emojify:
+            desc['status'] = EMOJIS.get(desc['status'],desc['status'])
         
         if token != str(pp.token):
             # hide private state

@@ -77,6 +77,8 @@ class Game(models.Model):
                 self.next_player = candidate
                 self.save()
                 return True
+            else:
+                candidate = (candidate + 1) % len(players)
         return False
         
     def __str__(self):

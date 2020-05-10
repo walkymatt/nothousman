@@ -1,6 +1,6 @@
-# routings for channels
-from channels.routing import ProtocolTypeRouter
+from channels.routing import ProtocolTypeRouter, URLRouter
+import skull.routing
 
 application = ProtocolTypeRouter({
-    # (http->django views is added by default)
+    'http': URLRouter(skull.routing.urlpatterns),
 })

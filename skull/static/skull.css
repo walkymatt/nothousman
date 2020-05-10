@@ -1,0 +1,236 @@
+body
+{
+	margin:0px;
+	background:#222;
+	font-family: Verdana, san-serif;
+	font-size: large;
+}
+
+h1
+{
+    color: #aaa;
+    margin: 30px 0px 5px 0px;
+}
+
+h2
+{
+    font-size: xx-large;
+    color: #f88;
+    margin: 5px;
+}
+
+#main
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#game
+{
+    width: 80%;
+    min-width: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+/*    background-color:#fa0; */
+}
+
+#game-state
+{
+    font-size: small;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#game-state-stage
+{
+    display: none;
+}
+
+#game-state-next-player
+{
+    display: none;
+}
+
+#game-state-status
+{
+    font-weight: bold;
+    color: #fff;
+    border: 1px solid #fff;
+    padding: 1em;
+    margin-top: 1em;
+    background-color: #333;
+}
+
+#game-state-msg
+{
+    color: red;
+}
+
+
+#your-area
+{
+/*    border:1px solid #088; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;  
+}
+
+#your-mat
+{
+    font-size:140px;
+    width:2.5em;
+    height:2.5em;
+    border:2px solid #088;
+    border-radius: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;  
+    background-color:#000;
+    margin: 20px;
+}
+
+#your-stack
+{
+/*    height:2.5em; */
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: center;
+    align-items: center;
+/*    background-color:#888; */
+    padding-top:1.2em;
+}
+
+.your-stacked-card
+{
+    width: 1.4em;
+    height: 1.3em;
+    margin-top: -1.2em;
+    border: 4px solid #962;
+    border-radius: 0.7em;
+    text-align: center;
+    vertical-align: middle;
+    background-color: #444;
+    padding: 0.05em 0;
+}
+
+.your-held-card
+{
+    display: inline-block;
+    margin: 10px;
+}
+
+#your-hand
+{
+    font-size:130px;
+/*    width:400px;
+    height:200px; */
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+/*    background-color:#844; */
+    /*margin: 20px;*/
+}
+
+#player-summaries
+{
+    display:flex;
+    flex-wrap: wrap;
+    flex-direction:row;
+    justify-content:center;
+    align-items:start;
+/*    background-color:#aaa; */
+    border: 1px solid #fff;
+    margin: 4px;
+    padding: 4px;
+}
+
+.player-summary
+{
+    display:flex;
+    flex-direction:column;
+    justify-content: start;
+    align-items: center;
+/*    background-color:#ddd; */
+    border: 1px dashed #fff;
+    margin: 4px;
+    width: 10em;
+    height: 10.8em;
+    padding: 4px;
+}
+
+.player-nickname
+{
+    font-size: x-large;
+    font-weight: bold;
+    color: #88f;
+}
+
+.player-status
+{
+    height: 1.5em;
+    width: 1.5em;
+/*    background-color: #abc; */
+    text-align: center;
+}
+
+.player-points
+{
+    display:none;
+}
+
+.player-alive
+{
+    display:none;
+}
+
+.player-passed
+{
+    display:none;
+}
+
+.player-is_next
+{
+    display:none;
+}
+
+.player-hand
+{
+    font-size: xx-large;
+}
+
+.player-stack
+{
+    height: 3.8em;
+    width: 3em;
+    font-size: xx-large;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: center;
+    align-items: center;
+/*    background-color:#888; */
+    border: 1px solid #fff;
+    border-radius:15px;
+    padding-top:0.8em;
+}
+
+.player-held-card
+{
+    display: inline-block;
+}
+
+.player-stacked-card
+{
+    margin-top: -0.8em;
+}
+
+#json_exposed
+{
+    display: none
+}
