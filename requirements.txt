@@ -1,8 +1,4 @@
 django
 django-eventstream
-django-heroku
 whitenoise
 daphne
-psycopg2-binary
-python-dotenv
-dj-database-url
