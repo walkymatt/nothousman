@@ -1,0 +1,128 @@
+body
+{
+	margin:0px;
+	background:#222;
+	font-family: Verdana, san-serif;
+	font-size: large;
+	color: #fdd;
+}
+
+h1
+{
+    color: #fdd;
+    margin-bottom: 1em;
+    margin-top: 1em;
+}
+
+h2
+{
+    color: #fdd;
+    margin-bottom: 0.5em;
+    margin-top: 0;
+}
+
+.container
+{
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.join-box
+{
+    border: 3px solid #336;
+    padding: 30px;
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.join-chunk
+{
+    text-align: center;
+    max-width: 220px;
+    margin-bottom: 1em;
+}
+
+.note
+{
+    font-size: medium;
+    color: #aac;
+}
+
+input
+{
+    font-family: inherit;
+    font-size: 100%;
+    box-sizing: border-box;
+    text-align: centre;
+    background-color: #555;
+}
+
+.join-field
+{
+    width: 150px;
+    border: 1px #fff;
+    color: #fff;
+}
+
+.game-status
+{
+    font-size: large;
+    font-weight: 600;
+    color: #aa7;
+    margin-top: 0.5em;
+    margin-bottom: 1em;
+    text-align: center;
+    max-width: 800px;
+}
+
+.msg
+{
+    font-size: large;
+    color: #f88;
+    padding: 0.5em;
+    margin: 0.5em;
+    background-color: #800;
+    border: 1px solid #444;
+}
+
+
+.status
+{
+    font-size: 0.7em;
+    font-weight: 400;
+    color: #6ad;
+}
+
+.control-box
+{
+    font-size: 0.2em;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;  
+    height: 1.5em;
+    margin: 1em;
+    margin-top: 2em;
+}
+
+.control
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;  
+    border: 1px solid #88a;
+    background-color:#226;
+    height:1.2em;
+    margin: 0.25em;
+    padding: 0.2em;
+    color: #aaf;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+

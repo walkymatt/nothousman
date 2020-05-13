@@ -18,9 +18,11 @@ def send_notification (request, tag, msg, action='refresh'):
         game.status = msg
         game.save()
         
-        send_event(tag, 'message', {'text':'refresh'})
     except Game.DoesNotExist:
         pass
+
+    # send message irrespective of game existence, to notify destruction
+    send_event(tag, 'message', {'text':action})
 
 # index page: join a game
 def index(request):
@@ -66,7 +68,7 @@ def game(request, tag):
         send_notification(request, tag, msg)
         msg = ''
     
-    msg = msg or '&nbsp;'
+    msg = msg or ''
 
     state = GM.visible_state(tag, token)
     state['msg'] = msg

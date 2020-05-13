@@ -10,56 +10,71 @@
     <title>Skull: {{ tag }}</title>
 </head>
 <body>
-<div id="main">
-    <div id="game">
+<div id="main" class="main">
+    <div id="container" class="container">
         <h1>SKULL</h1>
-        <h2>Game: {{ tag }}</h2>
-
-        <div id="game-state">
-            <div id='game-state-stage'>Stage: {{ stage }}</div>
-            <div id='game-state-next-player'>Next Player: {{ next_player }}</div>
-            <div id='game-state-status'>Status: {{ status }}</div>
-            <div id='game-state-msg'>Status: {{ msg }}</div>
-        </div>
-
-        <div id="player-summaries">
+        <h2>» {{ tag }} «</h2>
+        
+        <div class="players" id="players">
             {% for player in players %}
-            <div id="player-{{ forloop.counter }}" class="player-summary">
-                <div id="player-{{ forloop.counter }}-nickname" class="player-nickname">{{ player.nickname }}</div>
-                <div id="player-{{ forloop.counter }}-points" class="player-points">Points: {{ player.points }}</div>
-                <div id="player-{{ forloop.counter }}-status" class="player-status">{{ player.status }}</div>
-                <div id="player-{{ forloop.counter }}-alive" class="player-alive">Alive: {{ player.alive }}</div>
-                <div id="player-{{ forloop.counter }}-passed" class="player-passed">Passed: {{ player.passed }}</div>
-                <div id="player-{{ forloop.counter }}-next" class="player-is_next">Next: {{ player.is_next }}</div>
-                <div id="player-{{ forloop.counter }}-hand" class="player-hand">
-                {% for card in player.hand %}
-                    <div id="player-{{ forloop.parentloop.counter }}-hand-{{ forloop.counter }}" class="player-held-card">{{ card }}</div>
-                {% endfor %}
-                </div>
-                <div id="player-{{ forloop.counter }}-stack" class="player-stack">
-                {% for card in player.stack %}
-                    <div id="player-{{ forloop.parentloop.counter }}-stack-{{ forloop.counter }}" class="player-stacked-card">{{ card }}</div>
-                {% endfor %}
-                </div>
-            </div>
+            <div class="player" id="player-{{ forloop.counter0 }}">
+                <div class="nickname">{{ player.nickname }}</div>
+                <div class="status">{{ player.status }}</div>
+                
+                <div class="hand-box">
+                    <div class="hand">
+                        {% for card in player.hand %}
+                        <div class="card hand-{{ forloop.counter0 }}">
+                            <div class="card-content">{{ card }}</div>
+                        </div><!-- card -->
+                        {% endfor %}
+                    </div><!-- hand -->
+                </div><!-- hand-box -->
+                
+                <div class="mat" id="mat-{{ forloop.counter0 }}">
+                    <div class="stack">
+                        {% for card in player.stack %}
+                        <div class="card stack-{{ forloop.counter0 }}">
+                            <div class="card-content">{{ card }}</div>
+                        </div><!-- card -->
+                        {% endfor %}
+                    </div><!-- stack -->
+                </div><!-- mat -->
+            
+            </div><!-- player -->
             {% endfor %}
-        </div><!-- player-summaries -->
+        </div><!-- players -->
 
-        <div id="your-area">
-            <div id="your-mat">
-                <div id="your-stack">
-                    {% for card in player.stack %}
-                    <div id="your-stack-{{ forloop.counter }}" class="your-stacked-card">{{ card }}</div>
+        <div class='game-status' id="game-status">{{ status }}</div>
+        
+        <div class="you" id="you">
+            <div class="hand-box">
+                <div class="hand" id="your-hand">
+                    {% for card in your_hand %}
+                    <div class="card hand-{{ forloop.counter0 }}">
+                        <div class="card-content">{{ card }}</div>
+                    </div><!-- card -->
                     {% endfor %}
-                </div>
-            </div>
-    
-            <div id="your-hand">
-                {% for card in player.hand %}
-                <div id="your-hand-{{ forloop.counter }}" class="your-held-card">{{ card }}</div>
-                {% endfor %}
-            </div>
-        </div><!-- your-area -->
+                </div><!-- hand -->
+                
+                <div class="control-box" id="control-box">
+                    <div class="control" id="refresh-button">Refresh</div>
+                </div><!-- control-box -->
+            </div><!-- hand-box -->
+        
+            <div class="mat" id="your-mat">
+                <div class="stack" id="your-stack">
+                    {% for card in your_stack %}
+                    <div class="card stack-{{ forloop.counter0 }}">
+                        <div class="card-content">{{ card }}</div>
+                    </div><!-- card -->
+                    {% endfor %}
+                </div><!-- stack -->
+            </div><!-- mat -->
+        
+        </div><!-- you -->
+
+        <div class="msg" id="msg">{{ msg }}</div>
 
         <form action="{% url 'skull:game' tag %}" id="actions-form" method="post">
         {% csrf_token %}
@@ -68,23 +83,10 @@
         <input type="hidden" id="how-field" name="how" value="whole-page">
         <input type="hidden" id="card-field" name="card" value="0">
         <input type="hidden" id="target-field" name="target" value="{{ nickname }}">
-        <button type="button" id="refresh-button" autofocus>Full Refresh</button>
-        <button type="button" id="ajax-button">Ajax Refresh</button>
-        {% if your_hand %}
-        <br>
-        <button type="button" id="start-button">Start Game</button>
-        <button type="button" id="end-round-button">End Round</button>
-        <button type="button" id="destroy-button">Destroy Game</button>
-        <br>
-        <button type="button" id="bid-button">Bid</button>
-        <input type="number" id="bid-field" name="bid" value="0">
-        <button type="button" id="decline-button">Pass</button>
-
+        <input type="hidden" id="bid-field" name="bid" value="0">
         </form>
 
-        {% endif %}
-
-    </div><!-- game -->
+    </div><!-- container -->
 </div><!-- main -->
 
 <pre id="json_exposed">
@@ -100,131 +102,224 @@ $(document).ready(function() {
     {
         $("#json_exposed").html(JSON.stringify(state));
         
-        $("#game-state-stage").html("Stage: " + state["stage"]);
-        $("#game-state-next-player").html("Next Player: " + state["next_player"]);
-        $("#game-state-status").html(state["status"]);
-        $("#game-state-msg").html(state["msg"]);
+        $("#game-status").html(state["status"]);
+        
+        $("#msg").html(state["msg"]);
+        if ( state["msg"] == "" )
+        {
+            $("#msg").hide();
+        }
+        else
+        {
+            $("#msg").show();
+        }
         
         if ( "players" in state )
         {
-            var container = document.querySelector("#player-summaries");
-            container.innerHTML = "";
-            
-            const player_fields = [ "nickname", "points", "status", "alive", "passed", "is_next" ];
-            const prefixes = [ "", "Points: ", "", "Alive: ", "Passed: ", "Next: " ];
-            
+            var contents = [];
             for ( let ii = 0; ii < state["players"].length; ++ii )
             {
-                var child = document.createElement("div");
-                child.id = "player-" + (ii+1);
-                child.className = "player-summary";
-                
-                for ( let jj = 0; jj < player_fields.length; ++jj )
+                contents.push('<div class="player');
+                if ( state["players"][ii]["nickname"] == state["your_nickname"] )
                 {
-                    var chunk = document.createElement("div");
-                    chunk.id = "player-" + (ii+1) + "-" + player_fields[jj];
-                    chunk.className = "player-" + player_fields[jj];
-                    chunk.innerHTML = prefixes[jj] + state["players"][ii][player_fields[jj]];
-                    child.appendChild(chunk);
+                    contents.push(' player-is-you');
                 }
+                contents.push('" id="player-' + ii + '">');
+                contents.push('<div class="nickname">' + state["players"][ii]["nickname"] + "</div>");
+                contents.push('<div class="status">' + state["players"][ii]["status"] + "</div>");
                 
-                var handChunk = document.createElement("div");
-                handChunk.id = "player-" + (ii+1) + "-hand";
-                handChunk.className = "player-hand";
+                contents.push('<div class="hand-box">');
+                contents.push('<div class="hand">');
                 
                 for ( let jj = 0; jj < state["players"][ii]["hand"].length; ++jj )
                 {
-                    var cardChunk = document.createElement("div");
-                    cardChunk.id = "player-" + (ii+1) + "-hand-" + (jj+1);
-                    cardChunk.className = "player-held-card";
-                    cardChunk.innerHTML = state["players"][ii]["hand"][jj];
-                    handChunk.appendChild(cardChunk);
+                    contents.push('<div class="card hand-' + jj + '">');
+                    contents.push('<div class="card-content">' + state["players"][ii]["hand"][jj] + '</div>');
+                    contents.push('</div>');
                 }
                 
-                child.appendChild(handChunk);
-
-                var stackChunk = document.createElement("div");
-                stackChunk.id = "player-" + (ii+1) + "-stack";
-                stackChunk.className = "player-stack";
+                contents.push('</div></div>'); // hand, hand-box
+                contents.push('<div class="mat' + ((state["players"][ii]["points"] > 0) ? ' has-point' : '') + '" id="mat-' + ii + '">');
+                contents.push('<div class="stack">');
                 
                 for ( let jj = 0; jj < state["players"][ii]["stack"].length; ++jj )
                 {
-                    var cardChunk = document.createElement("div");
-                    cardChunk.id = "player-" + (ii+1) + "-stack-" + (jj+1);
-                    cardChunk.className = "player-stacked-card";
-                    cardChunk.innerHTML = state["players"][ii]["stack"][jj];
-                    stackChunk.appendChild(cardChunk);
+                    contents.push('<div class="card stack-' + jj + '">');
+                    contents.push('<div class="card-content">' + state["players"][ii]["stack"][jj] + '</div>');
+                    contents.push('</div>');
                 }
                 
-                child.appendChild(stackChunk);
-                
-                if ( state["actions"].includes("flip") )
-                {
-                    child.onclick = function ()
-                    {
-                        document.querySelector("#target-field").value = state["players"][ii]["nickname"];
-                        document.querySelector("#move-field").value = "flip";
-                        submit_move()
-                    }
-                }
-                
-                container.appendChild(child);
+                contents.push('</div></div></div>'); // stack, mat, player
             }
+            
+            $("#players").html(contents.join(""));
         }
         
         if ( "your_hand" in state )
-        {
-            var hand = document.querySelector("#your-hand");
-            hand.innerHTML = "";
+        {   
+            var contents = [];
             
             for ( let ii = 0; ii < state["your_hand"].length; ++ii )
             {
-                var chunk = document.createElement("div");
-                chunk.id = "your-hand-" + ii;
-                chunk.className = "your-held-card";
-                chunk.innerHTML = state["your_hand"][ii];
-                chunk.style.display = "inline-block";
-                
-                if ( state["actions"].includes("place") )
-                {
-                    chunk.onclick = function ()
-                    {
-                        document.querySelector("#card-field").value = ii;
-                        document.querySelector("#move-field").value = "place";
-                        submit_move()
-                    }
-                }
-                
-                hand.appendChild(chunk);
+                contents.push('<div class="card hand-' + ii + '" id="your-hand-' + ii + '">');
+                contents.push('<div class="card-content">' + state["your_hand"][ii] + '</div>');
+                contents.push('</div>'); // card
             }
-
-            var stack = document.querySelector("#your-stack");
-            stack.innerHTML = "";
+            
+            $("#your-hand").html(contents.join(""));
+            
+            contents = []
             
             for ( let ii = 0; ii < state["your_stack"].length; ++ii )
             {
-                var chunk = document.createElement("div");
-                chunk.id = "your-stack-" + ii;
-                chunk.className = "your-stacked-card";
-                chunk.innerHTML = state["your_stack"][ii];
-                chunk.style.display = "block";
-                chunk.style.margin.bottom = "-100px";
-                
-                stack.appendChild(chunk);
+                contents.push('<div class="card stack-' + ii + '">');
+                contents.push('<div class="card-content">' + state["your_stack"][ii] + '</div>');
+                contents.push('</div>'); // card
             }
+            
+            $("#your-stack").html(contents.join(""));
+            
+            if ( state["your_points"] > 0 )
+            {
+                $("#your-mat").addClass("has-point");
+            }
+            else
+            {
+                $("#your-mat").removeClass("has-point");
+            }
+            
+            // controls
+            
+            // placing uses the cards in hand
+            for ( let ii = 0; ii < state["your_hand"].length; ++ii )
+            {
+                if (state["actions"].includes("place"))
+                {
+                    $("#your-hand-" + ii).click( function ()
+                    {
+                        $("#card-field").val(ii);
+                        $("#move-field").val("place");
+                        submit_move();
+                    });
+                    $("#your-hand-" + ii).css("cursor", "pointer");
+                }
+                else
+                {
+                    $("#your-hand-" + ii).off("click");
+                    $("#your-hand-" + ii).css("cursor", "default");
+                }
+            }
+            
+            // flipping uses player areas and own mat
+            if (state["actions"].includes("flip"))
+            {
+                if ( state["players"][state["your_turn_order"]]["flipped"] < state["your_stack"].length )
+                {
+                    // must flip your own first
+                    $("#your-mat").click( function ()
+                    {
+                        $("#target-field").val(state["players"][state["your_turn_order"]]["nickname"]);
+                        $("#move-field").val("flip");
+                        submit_move();
+                    });
+                    $("#your-mat").css("cursor", "pointer");
+                    $(".player").off("click");
+                    $(".player").css("cursor", "default");
+                    $("#player-" + state["your_turn_order"]).click( function ()
+                    {
+                        $("#target-field").val(state["players"][state["your_turn_order"]]["nickname"]);
+                        $("#move-field").val("flip");
+                        submit_move();
+                    });
+                    $("#player-" + state["your_turn_order"]).css("cursor", "pointer");
+                }
+                else
+                {
+                    for ( let ii=0; ii < state["players"].length; ++ii )
+                    {
+                        if ( state["players"][ii]["flipped"] < state["players"][ii]["stack"].length )
+                        {
+                            $("#player-" + ii).click( function ()
+                            {
+                                $("#target-field").val(state["players"][ii]["nickname"]);
+                                $("#move-field").val("flip");
+                                submit_move();
+                            });
+                            $("#player-" + ii).css("cursor", "pointer");
+                        }
+                        else
+                        {
+                            $("#player-" + ii).off("click");
+                            $("#player-" + ii).css("cursor", "default");
+                        }
+                    }
+                }
+            }
+            
+            // always start controls with just refresh, which should ensure
+            // consistent ordering
+            $("#refresh-button").nextAll().remove();
+            
+            // bidding uses a number control
+            if (state["actions"].includes("bid"))
+            {
+                $("#control-box").append("<div class='control' id='bid-button'><label id='bid-label'>Bid: </label>"
+                                          + "<input type='number' id='bid-input' "
+                                          + "min='" + (state["bid"] + 1) + "' "
+                                          + "max='" + (state["placed"]) + "' "
+                                          + "value='" + (state["bid"] + 1) + "'/></div>");
+                $("#bid-label").click( function () {
+                        $("#bid-field").val($("#bid-input").val());
+                        $("#move-field").val("bid");
+                        submit_move();
+                });
+                $("#bid-label").css("cursor", "pointer");
+            }
+            
+            // remaining actions are all simple "buttons"
+            if (state["actions"].includes("decline"))
+            {
+                $("#control-box").append("<div class='control' id='pass-button'>Pass</div>");
+                $("#pass-button").click( function () {
+                        $("#move-field").val("decline");
+                        submit_move();
+                });
+            }
+            
+            if (state["actions"].includes("start"))
+            {
+                $("#control-box").append("<div class='control' id='start-button'>Start Game</div>");
+                $("#start-button").click( function () {
+                        $("#move-field").val("start");
+                        submit_move();
+                });
+            }
+                        
+            if (state["actions"].includes("end_round"))
+            {
+                $("#control-box").append("<div class='control' id='end-round-button'>End Round</div>");
+                $("#end-round-button").click( function () {
+                        $("#move-field").val("end_round");
+                        submit_move();
+                });
+            }
+
+            if (state["actions"].includes("destroy"))
+            {
+                $("#control-box").append("<div class='control' id='destroy-button'>Destroy Game</div>");
+                $("#destroy-button").click( function () {
+                        $("#move-field").val("destroy");
+                        submit_move();
+                });
+            }
+
+        }
+        else
+        {
+            $("#your-hand").hide();
+            $("#your-mat").hide();
         }
         
-        document.querySelector("#start-button").style.visibility = ( state["actions"].includes("start") ) ? "visible" : "hidden";
-        document.querySelector("#end-round-button").style.visibility = ( state["actions"].includes("end_round") ) ? "visible" : "hidden";
-        document.querySelector("#destroy-button").style.visibility = ( state["actions"].includes("destroy") ) ? "visible" : "hidden";
-        document.querySelector("#decline-button").style.visibility = ( state["actions"].includes("decline") ) ? "visible" : "hidden";
-        
-        document.querySelector("#bid-button").style.visibility = ( state["actions"].includes("bid") ) ? "visible" : "hidden";
-        document.querySelector("#bid-field").required = ( state["actions"].includes("bid") );
-//        document.querySelector("#bid-field").min = parseInt(state["bid"]) + 1;
-//        document.querySelector("#bid-field").max = state["placed"];
-        document.querySelector("#bid-field").value = parseInt(state["bid"]) + 1;
-        document.querySelector("#bid-field").style.visibility = ( state["actions"].includes("bid") ) ? "visible" : "hidden";
     }
     
     function submit_move ()
@@ -235,6 +330,7 @@ $(document).ready(function() {
     
     function move_refresh ()
     {
+        $("#move-field").val("refresh");
         submit_move();
     }
     
@@ -253,53 +349,27 @@ $(document).ready(function() {
         
     }
 
-    document.querySelector("#ajax-button").onclick = ajax_refresh;
-
-
-{% if your_hand %}
-  
-    function move_start ()
-    {
-        document.querySelector("#move-field").value="start";
-        submit_move();
-    }
-    
-    function move_end_round ()
-    {
-        document.querySelector("#move-field").value="end_round";
-        submit_move();
-    }
-    
-    function move_destroy ()
-    {
-        document.querySelector("#move-field").value="destroy";
-        submit_move();
-    }
-    
-    function move_decline ()
-    {
-        document.querySelector("#move-field").value="decline";
-        submit_move();
-    }
-    
-    function move_bid ()
-    {
-        document.querySelector("#move-field").value="bid";
-        submit_move();
-    }
-        
-    document.querySelector("#start-button").onclick = move_start;
-    document.querySelector("#end-round-button").onclick = move_end_round;
-    document.querySelector("#destroy-button").onclick = move_destroy;
-    document.querySelector("#decline-button").onclick = move_decline;
-    document.querySelector("#bid-button").onclick = move_bid;
-    document.querySelector("#refresh-button").onclick = move_refresh;
-    
-{% endif %}
+    $("#refresh-button").click(move_refresh);
 
     var es = new ReconnectingEventSource('/events/{{ tag }}/');
 
-    es.addEventListener('message', function (e) { ajax_refresh(); }, false);
+    es.addEventListener('message', function (e) {
+        console.log(e.data);
+        var dat = JSON.parse(e.data);
+        if (dat["text"] == "index")
+        {
+            window.location.replace("/skull/");
+        }
+        else if (dat["text"] == "refresh")
+        {
+             ajax_refresh();
+        }
+        else
+        {
+            console.log("unknown event: '" + e.data + "'");
+        }
+        
+    }, false);
 
     es.addEventListener('stream-reset', function (e) { console.log(e.data); }, false);
 

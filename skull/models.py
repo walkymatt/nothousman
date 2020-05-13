@@ -56,8 +56,8 @@ class Game(models.Model):
         return game
     
     def round_start (self, next_player=0):
-        self.stage = Game.Stage.STARTING
-        self.next_player = next_player
+        self.stage = Game.Stage.STARTING            
+        self.next_player = next_player            
         self.placed = 0
         self.bidder = -1
         self.bid = 0
@@ -65,6 +65,7 @@ class Game(models.Model):
         self.skuller = -1
         self.winner = -1
         self.save()
+
         
     def advance_player (self):
         current = self.next_player

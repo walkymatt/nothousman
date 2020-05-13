@@ -1,35 +1,41 @@
 <!DOCTYPE html>
 <html>
+{% load static %}
 <head>
     <meta charset="utf-8"/>
+    <link href="{% static 'join.css' %}" rel="stylesheet" type="text/css">
     <title>Skull</title>
 </head>
 <body>
-<h1>Skull</h1>
+<div class="container">
+<h1>SKULL</h1>
     
-{% if msg %}<p><strong>{{ msg }}</strong></p>{% endif %}
-    
+{% if msg %}
+<div class="msg">{{ msg }}</div>
+{% endif %}
+
+<div class="join-box">
+<h2>Join a game</h2>
 <form action="{% url 'skull:index' %}" method="post" id="join-form">
 {% csrf_token %}
-    Join game:<br>
-    <input id="game-name" type="text" size="16" required pattern="[A-Za-z0-9_]+"><br>
-    Player nickname:<br>
-    <input id="nick" type="text" size="16" required pattern="[A-Za-z0-9_]+" name="nick"><br>
-    <button id="join" type="button">Join</button><br>
+    <div class="join-chunk">
+        <label>Game Name</label><br>
+        <input id="game-name" type="text" size="16" required pattern="[A-Za-z0-9_]+" class="join-field" autofocus/>
+    </div>
+    
+    <div class="join-chunk">
+        <label>Player Name</label><br>
+        <input id="nick" type="text" size="16" required pattern="[A-Za-z0-9_]+" name="nick" class="join-field"/>
+    </div><!-- join-chunk -->
+
+    <div class="join-chunk note">(Allowed characters: letters, numbers, underscores)</div>
+    
+    <div class="control" id="join">Join</div>
     <input type="hidden" name="move" value="join">
 </form>
-
-<p>(Allowed characters: letters, numbers, underscores)</p>
+</div><!-- join-box -->
 
 <script>
-    document.querySelector('#game-name').focus();
-    document.querySelector('#game-name').onkeyup = function(e)
-    {
-        if (e.keyCode === 13) {  // enter, return
-            document.querySelector('#nick').focus();
-        }
-    };
-
     document.querySelector('#nick').onkeyup = function(e)
     {
         if (e.keyCode === 13) {  // enter, return
@@ -47,6 +53,6 @@
         }
     };
 </script>
-
+</div><!-- container -->
 </body>
 </html>

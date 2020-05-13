@@ -121,7 +121,7 @@ def place ( tag, token, card ):
         if len(player.stack):
             return '%s has already placed their first card' % player.nickname, False
         if (ii < 0) or (ii >= len(player.hand)):
-            return "selected card is out of range for %s's hand (%i)" % (player.nickname, ii), False
+            return "selected card is out of range for %s’s hand (%i)" % (player.nickname, ii), False
         
         hand, card = pop_string(player.hand, ii)       
         player.hand = hand
@@ -140,10 +140,10 @@ def place ( tag, token, card ):
     
     elif game.stage == Game.Stage.PLACING:
         if player.turn_order != game.next_player:
-            return "it is not player %s's turn to place now" % player.nickname, False
+            return "it is not player %s’s turn to place now" % player.nickname, False
         
         if ii > len(player.hand):
-            return "selected card is not in %s's hand (%i)" % (player.nickname, ii), False
+            return "selected card is not in %s’s hand (%i)" % (player.nickname, ii), False
        
         hand, card = pop_string(player.hand, ii)       
         player.hand = hand
@@ -173,7 +173,7 @@ def bid ( tag, token, count ):
 
     if game.stage == Game.Stage.PLACING:
         if player.turn_order != game.next_player:
-            return "it is not %s's turn to place now" % player.nickname, False
+            return "it is not %s’s turn to place now" % player.nickname, False
         
         if (count < 1) or (count > game.placed):
             return 'bid of %i is not valid (%i cards available)' % (count, game.placed), False
@@ -194,7 +194,7 @@ def bid ( tag, token, count ):
     
     elif game.stage == Game.Stage.BIDDING:
         if player.turn_order != game.next_player:
-            return "it is not %s's turn to bid now" % player.nickname, False
+            return "it is not %s’s turn to bid now" % player.nickname, False
         
         if (count <= game.bid) or (count > game.placed):
             return 'bid of %i is not valid (bid stands at %i with %i cards available)' % (count, game.bid, game.placed), False
@@ -223,7 +223,7 @@ def decline ( tag, token ):
 
     if game.stage == Game.Stage.BIDDING:
         if player.turn_order != game.next_player:
-            return "it is not %s's turn to bid now" % player.nickname, False
+            return "it is not %s’s turn to bid now" % player.nickname, False
     
         player.passed = True
         player.save()
@@ -286,7 +286,7 @@ def flip ( tag, token, nickname ):
                 target = game.player_set.get(nickname=nickname)
                 
                 if len(target.stack) < target.flipped:
-                    return "no cards available to flip in %s's stack" % target.nickname, False
+                    return "no cards available to flip in %s’s stack" % target.nickname, False
                 
                 target.flipped += 1
                 target.save()
@@ -301,7 +301,7 @@ def flip ( tag, token, nickname ):
                     game.skuller = target.turn_order
                     game.save()
                 
-                    return "%s died on %s's skull, losing the round" % (player.nickname, target.nickname), True
+                    return "%s died on %s’s skull, losing the round" % (player.nickname, target.nickname), True
                 else:
                     if game.flipped == game.bid:
                         # player wins round
@@ -354,6 +354,10 @@ def end_round ( tag, token ):
                 game.round_start(next_player=game.skuller)
                 for pp in game.player_set.all():
                     pp.round_start()
+                
+                # catch case of dying on own skull
+                if not game.player_set.get(turn_order=game.next_player).alive:
+                    game.advance_player()
                                 
                 return '%s loses their last card, %s starts the next round, all surviving players must place their first card' % (flipper.nickname, game.player_set.get(turn_order=game.next_player).nickname), True
         else:
@@ -452,9 +456,12 @@ def visible_state ( tag, token, emojify=True ):
                  'turn_order' : pp.turn_order, 'flipped' : pp.flipped,
                  'hand' : list(pp.hand), 'stack' : list(pp.stack) }
         
-        desc['status'] = 'dead' if (not pp.alive) else 'passed' if pp.passed else 'next' if desc['is_next'] else '&nbsp;'
-        if emojify:
-            desc['status'] = EMOJIS.get(desc['status'],desc['status'])
+        desc['status'] = ('DEAD' if (not pp.alive)
+                          else 'PASSED' if pp.passed
+                          else 'NEXT' if desc['is_next']
+                          else 'BID: %i' % (game.bid) if (pp.turn_order == game.bidder)
+                          else '&nbsp;')
+
         
         if token != str(pp.token):
             # hide private state
@@ -463,6 +470,10 @@ def visible_state ( tag, token, emojify=True ):
                 desc['stack'][ii] = 'X'
         else:
             # expose at top level for client simplicity
+            result['your_turn_order'] = pp.turn_order
+            result['your_points'] = pp.points
+            result['your_nickname'] = pp.nickname
+            
             if emojify:
                 result['your_hand'] = [EMOJIS.get(x, x) for x in list(pp.hand)]
                 result['your_stack'] = [EMOJIS.get(x, x) for x in list(pp.stack)]
