@@ -9,6 +9,10 @@ Thumbs.db
 *~
 .Rhistory
 
+# specific runtime cruft
+secret_key.txt
+nohup.out
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
