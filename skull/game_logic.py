@@ -285,7 +285,7 @@ def flip ( tag, token, nickname ):
             try:
                 target = game.player_set.get(nickname=nickname)
                 
-                if len(target.stack) < target.flipped:
+                if len(target.stack) <= target.flipped:
                     return "no cards available to flip in %s’s stack" % target.nickname, False
                 
                 target.flipped += 1
