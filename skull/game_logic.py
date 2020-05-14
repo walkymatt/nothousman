@@ -6,7 +6,7 @@ MIN_PLAYERS = 3
 MAX_PLAYERS = 10
 WINNING_POINTS = 2
 
-EMOJIS = { '0' : '🌸', '1' : '💀', 'X' : '☣️', 'NEXT' : '▶️', 'PASSED' : '👎', 'DEAD' : '☠️', 'WINNER' : '🏆' }
+EMOJIS = { '0' : '🌸', '1' : '💀', 'X' : '☣️', 'NEXT' : '▶️', 'PASSED' : '👎', 'DEAD' : '☠️', 'WINNER' : '🏆', 'BID: 0': '&nbsp;' }
 
 def join ( tag, nickname ):
     '''
