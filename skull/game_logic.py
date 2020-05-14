@@ -6,7 +6,7 @@ MIN_PLAYERS = 3
 MAX_PLAYERS = 10
 WINNING_POINTS = 2
 
-EMOJIS = { '0' : '🌺', '1' : '💀', 'X' : '☣️', 'next' : '➡️', 'passed' : '🏳️', 'dead' : '💔' }
+EMOJIS = { '0' : '🌸', '1' : '💀', 'X' : '☣️', 'NEXT' : '▶️', 'PASSED' : '👎', 'DEAD' : '☠️', 'WINNER' : '🏆' }
 
 def join ( tag, nickname ):
     '''
@@ -398,7 +398,7 @@ def destroy ( tag, token ):
     return True, 'game %s deleted' % tag
 
 
-def visible_state ( tag, token, emojify=True ):
+def visible_state ( tag, token, emojify=True, emojify_status=True ):
     '''
     Return a dict defining the game state as visible to the specified
     player. (Unrecognised players see only public state.)
@@ -456,7 +456,8 @@ def visible_state ( tag, token, emojify=True ):
                  'turn_order' : pp.turn_order, 'flipped' : pp.flipped,
                  'hand' : list(pp.hand), 'stack' : list(pp.stack) }
         
-        desc['status'] = ('DEAD' if (not pp.alive)
+        desc['status'] = ('WINNER' if ((game.stage == Game.Stage.OVER) and (pp.turn_order == game.winner))
+                          else 'DEAD' if (not pp.alive)
                           else 'PASSED' if pp.passed
                           else 'NEXT' if desc['is_next']
                           else 'BID: %i' % (game.bid) if (pp.turn_order == game.bidder)
@@ -484,6 +485,9 @@ def visible_state ( tag, token, emojify=True ):
         if emojify:
             desc['hand'] = [EMOJIS.get(x, x) for x in desc['hand']]
             desc['stack'] = [EMOJIS.get(x, x) for x in desc['stack']]
+        
+        if emojify_status:
+            desc['status'] = EMOJIS.get(desc['status'], desc['status'])
                 
         
         result['players'].append(desc)

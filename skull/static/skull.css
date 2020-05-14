@@ -105,6 +105,7 @@ h1, h2
 
 .status
 {
+    height: 1em;
     font-size: 0.7em;
     font-weight: 400;
     color: #6ad;
