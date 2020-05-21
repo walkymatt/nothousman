@@ -136,7 +136,8 @@ def place ( tag, token, card ):
             return 'all players have placed first card, %s must place or bid' % game.player_set.get(turn_order=game.next_player).nickname, True
         else:
             game.save()
-            return '%s has placed their first card' % player.nickname, True
+            awaited = ', '.join([str(x.nickname) for x in game.player_set.filter(stack='', alive=True)])
+            return '%s has placed their first card, waiting for %s' % (player.nickname, awaited), True
     
     elif game.stage == Game.Stage.PLACING:
         if player.turn_order != game.next_player:
@@ -398,7 +399,7 @@ def destroy ( tag, token ):
     return True, 'game %s deleted' % tag
 
 
-def visible_state ( tag, token, emojify=True, emojify_status=True ):
+def visible_state ( tag, token, emojify=True, emojify_status=True, hide_own_miniview=True ):
     '''
     Return a dict defining the game state as visible to the specified
     player. (Unrecognised players see only public state.)
@@ -470,7 +471,13 @@ def visible_state ( tag, token, emojify=True, emojify_status=True ):
             for ii in range(len(desc['stack'])-pp.flipped):
                 desc['stack'][ii] = 'X'
         else:
-            # expose at top level for client simplicity
+            # optionally also hide player's own hand and stack in miniview
+            if hide_own_miniview:
+                desc['hand'] = [ 'X' for x in desc['hand'] ]
+                for ii in range(len(desc['stack'])-pp.flipped):
+                    desc['stack'][ii] = 'X'
+                
+            # expose at top level in any case
             result['your_turn_order'] = pp.turn_order
             result['your_points'] = pp.points
             result['your_nickname'] = pp.nickname

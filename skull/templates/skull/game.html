@@ -78,7 +78,7 @@
 
         <form action="{% url 'skull:game' tag %}" id="actions-form" method="post">
         {% csrf_token %}
-        <input type="hidden" name="token" value="{{ token }}">
+        <input type="hidden" id="token-field" name="token" value="{{ token }}">
         <input type="hidden" id="move-field" name="move" value="refresh">
         <input type="hidden" id="how-field" name="how" value="whole-page">
         <input type="hidden" id="card-field" name="card" value="0">
@@ -97,6 +97,35 @@ $(document).ready(function() {
     
     var game_json = '{{ json_state|safe }}';
     var game_state = JSON.parse(game_json);
+    
+    // struggling to suppress Chrome's insistence on caching intermediate state
+    //window.history.replaceState({ "token" : "{{ token }}" }, null, "/skull/{{ tag }}/?token={{ token }}");
+    window.history.replaceState({ "token" : "{{ token }}" }, null, "/skull/{{ tag }}/");
+    console.log("setting state->token to {{ token }}");
+    
+    window.onpopstate = function (event)
+    {
+        console.log("popstate received");
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        if ( event.state )
+        {
+            console.log("event state is non-null");
+            
+            if  ("token" in event.state)
+            {
+                console.log("token in in event.state");
+                
+                if (event.state["token"] != "nobody")
+                {
+                    console.log("token is not nobody");
+                    $("#token-field").val(event.state["token"]);
+                }
+            }
+        }
+        
+        ajax_submit(true);
+    };
     
     function sync_to_game_state ( state )
     {
@@ -199,7 +228,7 @@ $(document).ready(function() {
                     {
                         $("#card-field").val(ii);
                         $("#move-field").val("place");
-                        submit_move();
+                        ajax_submit();
                     });
                     $("#your-hand-" + ii).css("cursor", "pointer");
                 }
@@ -324,32 +353,39 @@ $(document).ready(function() {
     
     function submit_move ()
     {
+        ajax_submit();
+    }
+    
+    function hard_refresh ()
+    {
+        $("#move-field").val("refresh");
         document.querySelector("#how-field").value = "whole-page";
         document.querySelector("#actions-form").submit()
     }
     
-    function move_refresh ()
+    function soft_refresh ()
     {
-        $("#move-field").val("refresh");
-        submit_move();
+        ajax_submit(true);
     }
     
-    function ajax_refresh ()
+    function ajax_submit(refresh=false)
     {
+        if ( refresh )
+        {
+            $("#move-field").val("refresh");
+        }
+        success_func = refresh ? function (response) { sync_to_game_state(response) } : function (response) {};
+        
         document.querySelector("#how-field").value = "json";
         
         $.ajax({ type: 'POST',
                  url: $("form").attr("action"),
-                 data: $("form").serialize(), 
-                 success: function(response)
-                 {
-                     sync_to_game_state(response);
-                 }
-        });
-        
+                 data: $("form").serialize(),
+                 success: success_func,
+        });    
     }
 
-    $("#refresh-button").click(move_refresh);
+    $("#refresh-button").click(soft_refresh);
 
     var es = new ReconnectingEventSource('/events/{{ tag }}/');
 
@@ -362,7 +398,7 @@ $(document).ready(function() {
         }
         else if (dat["text"] == "refresh")
         {
-             ajax_refresh();
+             ajax_submit(true);
         }
         else
         {

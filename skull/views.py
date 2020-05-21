@@ -31,7 +31,7 @@ def index(request):
 # game page: view game state, optionally performing an action
 def game(request, tag):
     action = request.POST.get('move', None)
-    token = request.POST.get('token', 'nobody')
+    token = request.session.get('token', request.POST.get('token', 'nobody'))
     how = request.POST.get('how', None)
     notify = False
     
@@ -40,6 +40,9 @@ def game(request, tag):
         if nick is None:
             return render(request, 'skull/index.html', { 'msg' : 'you must provide a valid nickname to join a game' })
         token, msg, notify = GM.join(tag, nick)
+        if token is not None:
+            request.session['token'] = token
+        
     elif action=='start':
         msg, notify = GM.start(tag, token)
     elif action=='place': 
