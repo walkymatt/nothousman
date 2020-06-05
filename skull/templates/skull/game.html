@@ -127,6 +127,20 @@ $(document).ready(function() {
         ajax_submit(true);
     };
     
+    function get_card_content_style( card )
+    {
+        if ( card == "0" )
+        {
+            return "flower";
+        }
+        else if ( card == "1" )
+        {
+            return "skull";
+        }
+        
+        return "back";
+    }
+    
     function sync_to_game_state ( state )
     {
         $("#json_exposed").html(JSON.stringify(state));
@@ -163,7 +177,9 @@ $(document).ready(function() {
                 for ( let jj = 0; jj < state["players"][ii]["hand"].length; ++jj )
                 {
                     contents.push('<div class="card hand-' + jj + '">');
-                    contents.push('<div class="card-content">' + state["players"][ii]["hand"][jj] + '</div>');
+                    contents.push('<div class="card-content ');
+                    contents.push(get_card_content_style(state["players"][ii]["hand"][jj]));
+                    contents.push('"></div>');
                     contents.push('</div>');
                 }
                 
@@ -174,7 +190,9 @@ $(document).ready(function() {
                 for ( let jj = 0; jj < state["players"][ii]["stack"].length; ++jj )
                 {
                     contents.push('<div class="card stack-' + jj + '">');
-                    contents.push('<div class="card-content">' + state["players"][ii]["stack"][jj] + '</div>');
+                    contents.push('<div class="card-content ');
+                    contents.push(get_card_content_style(state["players"][ii]["stack"][jj]));
+                    contents.push('"></div>');
                     contents.push('</div>');
                 }
                 
@@ -191,7 +209,7 @@ $(document).ready(function() {
             for ( let ii = 0; ii < state["your_hand"].length; ++ii )
             {
                 contents.push('<div class="card hand-' + ii + '" id="your-hand-' + ii + '">');
-                contents.push('<div class="card-content">' + state["your_hand"][ii] + '</div>');
+                contents.push('<div class="card-content ' + get_card_content_style(state["your_hand"][ii]) + '"></div>');
                 contents.push('</div>'); // card
             }
             
@@ -202,7 +220,7 @@ $(document).ready(function() {
             for ( let ii = 0; ii < state["your_stack"].length; ++ii )
             {
                 contents.push('<div class="card stack-' + ii + '">');
-                contents.push('<div class="card-content">' + state["your_stack"][ii] + '</div>');
+                contents.push('<div class="card-content ' + get_card_content_style(state["your_stack"][ii]) + '"></div>');
                 contents.push('</div>'); // card
             }
             

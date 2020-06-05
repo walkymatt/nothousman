@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+<head>
+    <meta charset="utf-8"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
+    <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
+    <link href="{% static 'nothanks.css' %}" rel="stylesheet" type="text/css">
+    <title>No Thanks: {{ tag }}</title>
+</head>
+<body>
+<div id="main" class="main">
+    <div id="container" class="container">
+        <h1>No Thanks</h1>
+        <h2>» {{ tag }} «</h2>
+        
+        <div class="players" id="players">
+            {% for player in players %}
+            <div class="player" id="player-{{ forloop.counter0 }}">
+                <div class="nickname">{{ player.nickname }}</div>
+                <div class="status">{{ player.status }}</div>
+                <div class="points">{{ player.points }}</div>
+                <div class="hand">
+                    {% for cc in player.hand %}
+                    <div class="card">{{ cc }}</div>
+                    {% endfor %}
+                </div><!-- hand -->
+            </div><!-- player -->
+            {% endfor %}
+        </div><!-- players -->
+
+        <div class='game-status' id="game-status">{{ status }}</div>
+        
+        <div class="tableau">
+            <div class="deck">
+                <div class="card" id="current_card">{{ card }}</div>
+                <div class="decksize" id="decksize">{{ deck_size }}</div>
+            </div><!-- deck -->
+            <div class="pool-column">
+                <div class="pool">
+                    <div class="pile" id="pile">
+                        <!-- let the javascript fill in the pennies -->
+                    </div><!-- pile -->
+                </div><!-- pool -->
+                <div class="decksize" id="spacer">&nbsp;</div>
+            </div><!-- pool-column -->
+        </div><!--tableau -->
+                
+        
+        <div class="you" id="you">
+            <div class="hand-box">
+                <div class="hand" id="your-hand">
+                    {% for cc in your_hand %}
+                    <div class="card">{{ cc }}</div>
+                    {% endfor %}
+                </div><!-- hand -->
+                
+                <div class="control-box" id="control-box">
+                    <div class="control" id="refresh-button">Refresh</div>
+                </div><!-- control-box -->
+            </div><!-- hand-box -->
+        
+        </div><!-- you -->
+
+        <div class="msg" id="msg">{{ msg }}</div>
+
+        <form action="{% url 'nothanks:game' tag %}" id="actions-form" method="post">
+        {% csrf_token %}
+        <input type="hidden" id="token-field" name="token" value="{{ token }}">
+        <input type="hidden" id="move-field" name="move" value="refresh">
+        <input type="hidden" id="how-field" name="how" value="whole-page">
+        </form>
+
+    </div><!-- container -->
+</div><!-- main -->
+
+<pre id="json_exposed">
+</pre>
+
+<script>    
+$(document).ready(function() {
+    
+    var game_json = '{{ json_state|safe }}';
+    var game_state = JSON.parse(game_json);
+    
+    // struggling to suppress Chrome's insistence on caching intermediate state
+    //window.history.replaceState({ "token" : "{{ token }}" }, null, "/skull/{{ tag }}/?token={{ token }}");
+    window.history.replaceState({ "token" : "{{ token }}" }, null, "/skull/{{ tag }}/");
+    console.log("setting state->token to {{ token }}");
+    
+    window.onpopstate = function (event)
+    {
+        console.log("popstate received");
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        if ( event.state )
+        {
+            console.log("event state is non-null");
+            
+            if  ("token" in event.state)
+            {
+                console.log("token in in event.state");
+                
+                if (event.state["token"] != "nobody")
+                {
+                    console.log("token is not nobody");
+                    $("#token-field").val(event.state["token"]);
+                }
+            }
+        }
+        
+        ajax_submit(true);
+    };
+    
+    function sync_to_game_state ( state )
+    {
+        $("#json_exposed").html(JSON.stringify(state));
+        
+        $("#game-status").html(state["status"]);
+        
+        $("#msg").html(state["msg"]);
+        if ( state["msg"] == "" )
+        {
+            $("#msg").hide();
+        }
+        else
+        {
+            $("#msg").show();
+        }
+        
+        if ( "players" in state )
+        {
+            var contents = [];
+            for ( let ii = 0; ii < state["players"].length; ++ii )
+            {
+                contents.push('<div class="player');
+                if ( state["players"][ii]["nickname"] == state["your_nickname"] )
+                {
+                    contents.push(' player-is-you');
+                }
+                contents.push('" id="player-' + ii + '">');
+                contents.push('<div class="nickname">' + state["players"][ii]["nickname"] + "</div>");
+                contents.push('<div class="status">' + state["players"][ii]["status"] + "</div>");
+                contents.push('<div class="points">' + state["players"][ii]["points"] + "</div>");
+                
+                contents.push('<div class="hand">');
+                
+                let prev = -1;
+                
+                for ( let jj = 0; jj < state["players"][ii]["hand"].length; ++jj )
+                {
+                    let cc = state["players"][ii]["hand"][jj];
+                    contents.push('<div class="card');
+                    if ( cc == prev + 1 )
+                    {
+                        contents.push(' adjacent');
+                    }
+                    contents.push('">' + cc + '</div>');
+                    prev = cc;
+                }
+                
+                contents.push('</div></div>'); // hand, player
+            }
+            
+            $("#players").html(contents.join(""));
+        }
+        
+        if ( state["card"] == "0" )
+        {
+            $("#current_card").html("");
+        }
+        else
+        {
+            $("#current_card").html(state["card"]);
+        }
+        
+        if ( state["pool"] > 0 )
+        {
+            let pennies = [];
+            
+            for ( let ii = 0; ii < state["pool"]; ++ii )
+            {
+                pennies.push('<div class="penny"></div>');
+            }
+            
+            $("#pile").html(pennies.join(""));
+        }
+        
+        
+        if ( "your_hand" in state )
+        {   
+            var contents = [];
+
+            let prev = -1;
+            
+            for ( let ii = 0; ii < state["your_hand"].length; ++ii )
+            {
+                let cc = state["your_hand"][ii];
+                contents.push('<div class="card');
+                if ( cc == prev + 1 )
+                {
+                    contents.push(' adjacent');
+                }
+                contents.push('">' + cc + '</div>');
+                prev = cc;
+            }
+            
+            $("#your-hand").html(contents.join(""));
+            
+            // controls
+            
+            // always start controls with just refresh, which should ensure
+            // consistent ordering
+            $("#refresh-button").nextAll().remove();
+            
+            // eventually will probably want to put these two elsewhere
+            if (state["actions"].includes("take"))
+            {
+                $("#control-box").append("<div class='control' id='take-button'>Take</div>");
+                $("#take-button").click( function () {
+                        $("#move-field").val("take");
+                        submit_move();
+                });
+            }            
+            
+            if (state["actions"].includes("pay"))
+            {
+                $("#control-box").append("<div class='control' id='pay-button'>Pay</div>");
+                $("#pay-button").click( function () {
+                        $("#move-field").val("pay");
+                        submit_move();
+                });
+            }
+            
+            // remaining actions are all simple "buttons"            
+            if (state["actions"].includes("start"))
+            {
+                $("#control-box").append("<div class='control' id='start-button'>Start Game</div>");
+                $("#start-button").click( function () {
+                        $("#move-field").val("start");
+                        submit_move();
+                });
+            }
+                        
+            if (state["actions"].includes("end_round"))
+            {
+                $("#control-box").append("<div class='control' id='end-round-button'>End Round</div>");
+                $("#end-round-button").click( function () {
+                        $("#move-field").val("end_round");
+                        submit_move();
+                });
+            }
+
+            if (state["actions"].includes("destroy"))
+            {
+                $("#control-box").append("<div class='control' id='destroy-button'>Destroy Game</div>");
+                $("#destroy-button").click( function () {
+                        $("#move-field").val("destroy");
+                        submit_move();
+                });
+            }
+
+        }
+        else
+        {
+            $("#your-hand").hide();
+        }
+        
+    }
+    
+    function submit_move ()
+    {
+        ajax_submit();
+    }
+    
+    function hard_refresh ()
+    {
+        $("#move-field").val("refresh");
+        document.querySelector("#how-field").value = "whole-page";
+        document.querySelector("#actions-form").submit()
+    }
+    
+    function soft_refresh ()
+    {
+        ajax_submit(true);
+    }
+    
+    function ajax_submit(refresh=false)
+    {
+        if ( refresh )
+        {
+            $("#move-field").val("refresh");
+        }
+        success_func = refresh ? function (response) { sync_to_game_state(response) } : function (response) {};
+        
+        document.querySelector("#how-field").value = "json";
+        
+        $.ajax({ type: 'POST',
+                 url: $("form").attr("action"),
+                 data: $("form").serialize(),
+                 success: success_func,
+        });    
+    }
+
+    $("#refresh-button").click(soft_refresh);
+
+    var es = new ReconnectingEventSource('/events/{{ tag }}/');
+
+    es.addEventListener('message', function (e) {
+        console.log(e.data);
+        var dat = JSON.parse(e.data);
+        if (dat["text"] == "index")
+        {
+            window.location.replace("/skull/");
+        }
+        else if (dat["text"] == "refresh")
+        {
+             ajax_submit(true);
+        }
+        else
+        {
+            console.log("unknown event: '" + e.data + "'");
+        }
+        
+    }, false);
+
+    es.addEventListener('stream-reset', function (e) { console.log(e.data); }, false);
+
+    sync_to_game_state ( game_state );
+});    
+</script>
+
+</body>
+</html>

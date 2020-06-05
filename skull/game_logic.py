@@ -133,7 +133,9 @@ def place ( tag, token, card ):
         if len(game.player_set.filter(stack='', alive=True))==0:
             game.stage = Game.Stage.PLACING
             game.save()
-            return 'all players have placed first card, %s must place or bid' % game.player_set.get(turn_order=game.next_player).nickname, True
+            next_player = game.player_set.get(turn_order=game.next_player)
+            action = 'place or bid' if len(next_player.hand) else 'bid'
+            return 'all players have placed their first card, %s must %s' % (next_player.nickname, action), True
         else:
             game.save()
             awaited = ', '.join([str(x.nickname) for x in game.player_set.filter(stack='', alive=True)])
@@ -153,8 +155,10 @@ def place ( tag, token, card ):
         
         game.placed += 1
         game.advance_player()
-        return '%s has placed, %s must place or bid' % (player.nickname, game.player_set.get(turn_order=game.next_player).nickname), True
-    
+        next_player = game.player_set.get(turn_order=game.next_player)
+        action = 'place or bid' if len(next_player.hand) else 'bid'
+        return '%s has placed, %s must %s' % (player.nickname, next_player.nickname, action), True
+        
     else:
         return 'placing a card is not allowed at this game stage', False
 
@@ -399,7 +403,7 @@ def destroy ( tag, token ):
     return True, 'game %s deleted' % tag
 
 
-def visible_state ( tag, token, emojify=True, emojify_status=True, hide_own_miniview=True ):
+def visible_state ( tag, token, emojify=False, emojify_status=True, hide_own_miniview=True ):
     '''
     Return a dict defining the game state as visible to the specified
     player. (Unrecognised players see only public state.)

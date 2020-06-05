@@ -33,7 +33,9 @@ ALLOWED_HOSTS = ['localhost', 'nothousman.com']
 INSTALLED_APPS = [
     'channels',
     'django_eventstream',
+    'home.apps.HomeConfig',
     'skull.apps.SkullConfig',
+    'nothanks.apps.NothanksConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
