@@ -39,7 +39,7 @@ def game(request, tag):
         nick = request.POST.get('nick', None)
         if nick is None:
             return render(request, 'nothanks/index.html', { 'msg' : 'you must provide a valid nickname to join a game' })
-        house_rules = request.POST.get('house_rules', 'no')
+        house_rules = request.POST.get('house_rules', 'no') == 'yes'
         num_rounds = request.POST.get('num_rounds', 3)
         
         try:
