@@ -72,6 +72,8 @@
         <form action="{% url 'nothanks:game' tag %}" id="actions-form" method="post">
         {% csrf_token %}
         <input type="hidden" id="token-field" name="token" value="{{ token }}">
+        <input type="hidden" id="which-card" name="card" value="unset">
+        <input type="hidden" id="pool-size" name="pool_size" value="unset">
         <input type="hidden" id="move-field" name="move" value="refresh">
         <input type="hidden" id="how-field" name="how" value="whole-page">
         </form>
@@ -240,6 +242,10 @@ $(document).ready(function() {
             {
                 $("#purse").hide();
             }
+            
+            // these form fields are used to filter duplicate requests
+            $("#which-card").val(state["card"]);
+            $("#pool-size").val(state["pool"]);
             
             // controls
             

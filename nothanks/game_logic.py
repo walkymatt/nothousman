@@ -104,7 +104,7 @@ def start ( tag, token ):
     return 'Started game %s, turn order is [%s], %s to lead' % (tag, turn_order, game.player_set.get(turn_order=game.next_player).nickname), True
 
 
-def take ( tag, token ):
+def take ( tag, token, current_card ):
     '''
     Take the current card and pool.
     '''
@@ -124,6 +124,9 @@ def take ( tag, token ):
         return "internal game error: deck is empty", False
     
     card, deck = deck[0], deck[1:]
+    
+    if current_card != card:
+        return 'ignoring duplicate take request for card ' + str(current_card), False
     
     try:
         hand = [ int(x) for x in player.hand.split(',') ] if len(player.hand) else []
@@ -154,7 +157,7 @@ def take ( tag, token ):
     return msg, True 
     
 
-def pay ( tag, token ):
+def pay ( tag, token, pool_size ):
     '''
     Pay 1 to refuse the current card.
     '''
@@ -164,6 +167,9 @@ def pay ( tag, token ):
 
     if game.stage != Game.Stage.PLAYING:
         return "paying is not a valid move at this game stage", False
+    
+    if game.pool != pool_size:
+        return 'ignoring duplicate pay request at pool size ' + str(pool_size), False
     
     if player.cash < 1:
         return "%s has no tokens so cannot pay", False

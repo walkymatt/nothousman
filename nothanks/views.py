@@ -53,10 +53,21 @@ def game(request, tag):
         
     elif action=='start':
         msg, notify = GM.start(tag, token)
-    elif action=='take': 
-        msg, notify = GM.take(tag, token)
+    elif action=='take':
+        try:
+            current_card = int(request.POST.get('card', '-1'))
+        except Exception:
+            current_card = None
+        
+        msg, notify = GM.take(tag, token, current_card=current_card)
     elif action=='pay':
-        msg, notify = GM.pay(tag, token)
+        try:
+            pool_size = int(request.POST.get('pool_size', '-1'))
+        except Exception:
+            pool_size = None
+        
+        msg, notify = GM.pay(tag, token, pool_size=pool_size)
+        
     elif action=='end_round': 
         msg, notify = GM.end_round(tag, token)
     elif action=='destroy':
