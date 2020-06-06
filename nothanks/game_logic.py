@@ -133,6 +133,9 @@ def take ( tag, token, current_card ):
     except Exception as e:
         return "internal game error: player hand is malformed (%s)" % (str(e)), False
     
+    if card in hand:
+        return 'ignoring duplicate take request for card ' + str(card), False
+        
     hand.append(card)
     player.hand = ','.join([str(x) for x in sorted(hand)])
     game.deck = ','.join([str(x) for x in deck])
