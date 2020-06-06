@@ -81,8 +81,8 @@ class Player(models.Model):
     # players supply their own nickname when joining a game
     nickname = models.CharField(max_length=32)
     
-    points = models.PositiveSmallIntegerField(default=0)
-    cash = models.PositiveSmallIntegerField(default=INITIAL_CASH)
+    points = models.IntegerField(default=0)
+    cash = models.IntegerField(default=INITIAL_CASH)
     
     # using strings for this kinda sucks, but it's easier than trying
     # to do proper data structures in DB tables, and the structs are very simple

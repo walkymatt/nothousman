@@ -9,6 +9,7 @@ DECK_MAX = 35
 DECK_SIZE = 24
 NUM_ROUNDS = 3
 
+EMOJIS = { 'NEXT' : '▶️', 'WINNER' : '🏆' }
 
 def make_deck ( count=DECK_SIZE, lo=DECK_MIN, hi=DECK_MAX ):
     '''
@@ -18,7 +19,7 @@ def make_deck ( count=DECK_SIZE, lo=DECK_MIN, hi=DECK_MAX ):
     return ','.join([str(x) for x in deck])
     
 
-def join ( tag, nickname ):
+def join ( tag, nickname, num_rounds=NUM_ROUNDS, house_rules=False ):
     '''
     Attempt to add a player to a game. If the game is in progress, this fails.
     If the game already has a player with the same nickname, reconnects that player.
@@ -45,7 +46,7 @@ def join ( tag, nickname ):
         return token, 'Player %s joined game %s' % (nickname, tag), True
         
     except Game.DoesNotExist:
-        game = Game.create(tag, nickname, num_rounds=NUM_ROUNDS, house_rules=False)
+        game = Game.create(tag, nickname, num_rounds=num_rounds, house_rules=house_rules)
         token = str(game.player_set.get(nickname=nickname).token)
         return token, 'Game %s created, owned by %s' % (tag, nickname), True
 
@@ -131,7 +132,7 @@ def take ( tag, token ):
     
     hand.append(card)
     player.hand = ','.join([str(x) for x in sorted(hand)])
-    game.deck = ','.join([str(x) for x in hand])
+    game.deck = ','.join([str(x) for x in deck])
 
     player.cash += game.pool
     game.pool = 0
@@ -183,7 +184,7 @@ def calculate_score ( player ):
     Calculate a player's score for a round, as:
     sum of lowest card values in each continuous run, minus remaining cash.
     '''
-    hand = [ int(x) for x in player.hand.split(',') ]       # should be already sorted
+    hand = [ int(x) for x in player.hand.split(',') ] if len(player.hand) else []     # should be already sorted
     score = 0
     
     prev = -100
@@ -208,11 +209,14 @@ def end_round ( tag, token ):
     
     players = game.player_set.all().order_by('turn_order')
     round_scores = {}
+    running_scores = {}
+    
     for pp in players:
-        score = calculate_score(player)
-        round_scores[player.nickname] = score
-        player.score += score
-        player.save()
+        score = calculate_score(pp)
+        round_scores[pp.nickname] = score
+        pp.points += score
+        pp.save()
+        running_scores[pp.nickname] = pp.points
     
     game.round += 1
     game.save()
@@ -220,12 +224,26 @@ def end_round ( tag, token ):
     if game.round >= game.num_rounds:
         game.stage = Game.Stage.GAME_OVER
         game.save()
-        stage_msg = 'Game is now over.'
+        
+        best = game.player_set.all().order_by('points')[0].points
+        winners = game.player_set.all().filter(points=best)
+        
+        if len(winners) == 1:
+            win_msg = "%s wins!" % winners[0].nickname
+        else:
+            win_msg = "%s and %s are joint winners" % ( ', '.join([x.nickname for x in winners[:(len(winners)-1)]]), winners[len(winners)-1].nickname)
+        
+        stage_msg = 'Final scores: %s. %s' % (', '.join( [ '%s: %i' % (nick, running_scores[nick]) for nick in running_scores]), win_msg)
+                                                
     else:
-        game.round_start()
+        if game.round > 1:
+            run_msg = 'Overall scores: %s.' % (', '.join( [ '%s: %i' % (nick, running_scores[nick]) for nick in running_scores]))
+        
+        # TODO: settle on rule for next player
+        game.round_start(deck=make_deck(), next_player=game.next_player)
         for pp in players:
             pp.round_start()
-        stage_msg = 'Starting round %i/%' % (game.round + 1, game.num_rounds)
+        stage_msg = 'Starting round %i/%i' % (game.round + 1, game.num_rounds)
     
     return 'Scores for round %i: %s. %s' % (game.round, ', '.join( [ '%s: %i' % (nick, round_scores[nick]) for nick in round_scores] ), stage_msg), True
 
@@ -289,6 +307,10 @@ def visible_state ( tag, token, emojify=True, emojify_status=True, hide_own_mini
     result['card'] = deck[0] if deck else 0
     result['deck_size'] = len(deck)
     result['status'] = game.status
+
+    # these will be overwritten later for real players
+    result['your_hand'] = []
+    result['your_cash'] = 0
     
     result['players'] = []
     
@@ -301,18 +323,22 @@ def visible_state ( tag, token, emojify=True, emojify_status=True, hide_own_mini
                  'is_next' : (game.next_player != -1) and (pp.turn_order == game.next_player),
                  'owner' : pp.owner,
                  'turn_order' : pp.turn_order,
-                 'hand' : [ int(x) for x in player.hand.split(',') ] if player.hand else [] }
+                 'hand' : [ int(x) for x in pp.hand.split(',') ] if pp.hand else [] }
         
         desc['status'] = ('WINNER' if ((game.stage == Game.Stage.GAME_OVER) and (pp.points == best))
                           else 'NEXT' if desc['is_next']
                           else '&nbsp;')
+        
+        if emojify_status:
+            desc['status'] = EMOJIS.get(desc['status'], desc['status'])
+
         
         if token == str(pp.token):
             result['your_turn_order'] = pp.turn_order
             result['your_points'] = pp.points
             result['your_nickname'] = pp.nickname
             result['your_hand'] = desc['hand']
-            result['your_cash'] = pp.cash
+            result['your_cash'] = pp.cash            
         
         result['players'].append(desc)
     

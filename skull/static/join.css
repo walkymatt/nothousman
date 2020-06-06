@@ -48,7 +48,7 @@ h2
 
 .note
 {
-    font-size: medium;
+    font-size: small;
     color: #aac;
 }
 
@@ -125,4 +125,8 @@ input
     cursor: pointer;
 }
 
+#rounds-field
+{
+    color: #fff;
+}
 

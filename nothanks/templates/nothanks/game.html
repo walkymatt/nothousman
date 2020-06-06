@@ -32,7 +32,7 @@
 
         <div class='game-status' id="game-status">{{ status }}</div>
         
-        <div class="tableau">
+        <div class="tableau" id="tableau">
             <div class="deck">
                 <div class="card" id="current_card">{{ card }}</div>
                 <div class="decksize" id="decksize">{{ deck_size }}</div>
@@ -50,12 +50,16 @@
         
         <div class="you" id="you">
             <div class="hand-box">
-                <div class="hand" id="your-hand">
-                    {% for cc in your_hand %}
-                    <div class="card">{{ cc }}</div>
-                    {% endfor %}
-                </div><!-- hand -->
-                
+                <div class="hand-row" id="hand-row">
+                    <div class="hand" id="your-hand">
+                        {% for cc in your_hand %}
+                        <div class="card">{{ cc }}</div>
+                        {% endfor %}
+                    </div><!-- hand -->
+                    <div class="purse" id="purse">
+                        <div class="cash" id="cash">{{ your_cash }}</div>
+                    </div><!-- purse -->
+                </div><!-- hand-row -->
                 <div class="control-box" id="control-box">
                     <div class="control" id="refresh-button">Refresh</div>
                 </div><!-- control-box -->
@@ -85,8 +89,7 @@ $(document).ready(function() {
     var game_state = JSON.parse(game_json);
     
     // struggling to suppress Chrome's insistence on caching intermediate state
-    //window.history.replaceState({ "token" : "{{ token }}" }, null, "/skull/{{ tag }}/?token={{ token }}");
-    window.history.replaceState({ "token" : "{{ token }}" }, null, "/skull/{{ tag }}/");
+    window.history.replaceState({ "token" : "{{ token }}" }, null, "/nothanks/{{ tag }}/");
     console.log("setting state->token to {{ token }}");
     
     window.onpopstate = function (event)
@@ -142,7 +145,7 @@ $(document).ready(function() {
                 contents.push('" id="player-' + ii + '">');
                 contents.push('<div class="nickname">' + state["players"][ii]["nickname"] + "</div>");
                 contents.push('<div class="status">' + state["players"][ii]["status"] + "</div>");
-                contents.push('<div class="points">' + state["players"][ii]["points"] + "</div>");
+                contents.push('<div class="points">Points: ' + state["players"][ii]["points"] + "</div>");
                 
                 contents.push('<div class="hand">');
                 
@@ -186,54 +189,96 @@ $(document).ready(function() {
             
             $("#pile").html(pennies.join(""));
         }
+        else
+        {
+            $("#pile").html("");
+        }
         
+        if ( state["deck_size"] > 0 )
+        {
+            $("#decksize").html(state["deck_size"] + " remaining");
+        }
+        else
+        {
+            $("#decksize").html("&nbsp;");
+        }
         
-        if ( "your_hand" in state )
+        if ( "your_nickname" in state )
         {   
             var contents = [];
 
             let prev = -1;
             
-            for ( let ii = 0; ii < state["your_hand"].length; ++ii )
+            if ( state["your_hand"].length )
             {
-                let cc = state["your_hand"][ii];
-                contents.push('<div class="card');
-                if ( cc == prev + 1 )
+                for ( let ii = 0; ii < state["your_hand"].length; ++ii )
                 {
-                    contents.push(' adjacent');
+                    let cc = state["your_hand"][ii];
+                    contents.push('<div class="card');
+                    if ( cc == prev + 1 )
+                    {
+                        contents.push(' adjacent');
+                    }
+                    contents.push('">' + cc + '</div>');
+                    prev = cc;
                 }
-                contents.push('">' + cc + '</div>');
-                prev = cc;
+            
+                $("#your-hand").html(contents.join(""));
+                $("#your-hand").show();
+            }
+            else
+            {
+                $("#your-hand").hide();
             }
             
-            $("#your-hand").html(contents.join(""));
+            if ( state["your_cash"] )
+            {
+                $("#purse").show();
+                $("#cash").html(state["your_cash"]);
+            }
+            else
+            {
+                $("#purse").hide();
+            }
             
             // controls
             
-            // always start controls with just refresh, which should ensure
-            // consistent ordering
-            $("#refresh-button").nextAll().remove();
-            
-            // eventually will probably want to put these two elsewhere
+            // main actions use game components as buttons
+                        
             if (state["actions"].includes("take"))
             {
-                $("#control-box").append("<div class='control' id='take-button'>Take</div>");
-                $("#take-button").click( function () {
+                $("#current_card").click( function () {
                         $("#move-field").val("take");
                         submit_move();
                 });
-            }            
+                $("#current_card").css("cursor", "pointer");
+            }
+            else
+            {
+                $("#current_card").off("click");
+                $("#current_card").css("cursor", "default");
+            }
             
             if (state["actions"].includes("pay"))
             {
-                $("#control-box").append("<div class='control' id='pay-button'>Pay</div>");
-                $("#pay-button").click( function () {
+                $("#purse").click( function () {
                         $("#move-field").val("pay");
                         submit_move();
                 });
+                $("#purse").css("cursor", "pointer");
             }
-            
+            else
+            {
+                $("#purse").off("click");
+                $("#purse").css("cursor", "default");
+            }
+
             // remaining actions are all simple "buttons"            
+
+            // always start control strip with just refresh, which should ensure
+            // consistent ordering
+            $("#refresh-button").nextAll().remove();
+            
             if (state["actions"].includes("start"))
             {
                 $("#control-box").append("<div class='control' id='start-button'>Start Game</div>");
@@ -264,7 +309,7 @@ $(document).ready(function() {
         }
         else
         {
-            $("#your-hand").hide();
+            $("#hand-row").hide();
         }
         
     }
@@ -312,7 +357,7 @@ $(document).ready(function() {
         var dat = JSON.parse(e.data);
         if (dat["text"] == "index")
         {
-            window.location.replace("/skull/");
+            window.location.replace("/nothanks/");
         }
         else if (dat["text"] == "refresh")
         {

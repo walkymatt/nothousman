@@ -39,7 +39,15 @@ def game(request, tag):
         nick = request.POST.get('nick', None)
         if nick is None:
             return render(request, 'nothanks/index.html', { 'msg' : 'you must provide a valid nickname to join a game' })
-        token, msg, notify = GM.join(tag, nick)
+        house_rules = request.POST.get('house_rules', 'no')
+        num_rounds = request.POST.get('num_rounds', 3)
+        
+        try:
+            num_rounds = int(num_rounds)
+        except Exception:
+            num_rounds = 3
+        
+        token, msg, notify = GM.join(tag, nick, house_rules=house_rules, num_rounds=num_rounds)
         if token is not None:
             request.session['nt_token'] = token
         

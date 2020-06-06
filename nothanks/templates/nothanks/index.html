@@ -28,8 +28,25 @@
         <input id="nick" type="text" size="16" required pattern="[A-Za-z0-9_]+" name="nick" class="join-field"/>
     </div><!-- join-chunk -->
 
-    <div class="join-chunk note">(Allowed characters: letters, numbers, underscores)</div>
+    <div class="join-chunk note">Allowed characters: letters, numbers, underscores</div>
     
+    
+    <div class="join-chunk">
+        <label for="num_rounds">Rounds: </label>
+        <input type="number" id="rounds-field" min="1" max="7" value="3" name="num_rounds" />
+    </div><!-- join-chunk -->
+    
+    <div class="join-chunk">
+        <input type="checkbox" name="house_rules" value="yes" />
+        <label for="house_rules">House Rules</label>
+    </div><!-- join-chunk -->
+
+    <div class="join-chunk note">
+        House rules end the move when you take a card.
+        Game options are ignored when joining a game that already exists.
+    </div>
+    
+
     <div class="control" id="join">Join</div>
     <input type="hidden" name="move" value="join">
 </form>
