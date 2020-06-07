@@ -160,7 +160,7 @@ def take ( tag, token, current_card ):
     return msg, True 
     
 
-def pay ( tag, token, pool_size ):
+def pay ( tag, token, wallet ):
     '''
     Pay 1 to refuse the current card.
     '''
@@ -171,8 +171,8 @@ def pay ( tag, token, pool_size ):
     if game.stage != Game.Stage.PLAYING:
         return "paying is not a valid move at this game stage", False
     
-    if game.pool != pool_size:
-        return 'ignoring duplicate pay request at pool size ' + str(pool_size), False
+    if player.cash != wallet:
+        return 'ignoring duplicate pay request with wallet contents ' + str(wallet), False
     
     if player.cash < 1:
         return "%s has no tokens so cannot pay", False

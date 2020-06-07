@@ -106,6 +106,7 @@ class Player(models.Model):
     
     def round_start (self):
         self.hand = ''
+        self.cash = INITIAL_CASH
         self.save()
     
     

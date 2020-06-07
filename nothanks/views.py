@@ -62,11 +62,11 @@ def game(request, tag):
         msg, notify = GM.take(tag, token, current_card=current_card)
     elif action=='pay':
         try:
-            pool_size = int(request.POST.get('pool_size', '-1'))
+            wallet = int(request.POST.get('wallet', '-1'))
         except Exception:
-            pool_size = None
+            wallet = None
         
-        msg, notify = GM.pay(tag, token, pool_size=pool_size)
+        msg, notify = GM.pay(tag, token, wallet=wallet)
         
     elif action=='end_round': 
         msg, notify = GM.end_round(tag, token)
