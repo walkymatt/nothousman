@@ -1,6 +1,6 @@
 from channels.routing import ProtocolTypeRouter, URLRouter
-import skull.routing
+import home.routing
 
 application = ProtocolTypeRouter({
-    'http': URLRouter(skull.routing.urlpatterns),
+    'http': URLRouter(home.routing.urlpatterns),
 })

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+<head>
+    <meta charset="utf-8"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="{% static 'django_eventstream/eventsource.min.js' %}"></script>
+    <script src="{% static 'django_eventstream/reconnecting-eventsource.js' %}"></script>
+    <link href="{% static 'cockroach.css' %}" rel="stylesheet" type="text/css">
+    <title>Cockroach Poker: {{ tag }}</title>
+</head>
+<body>
+<div id="main" class="main">
+    <div id="container" class="container">
+        <h1>Cockroach Poker</h1>
+        <h2>» {{ tag }} «</h2>
+        
+        <div class="players" id="players">
+            {% for player in players %}
+            <div class="player" id="player-{{ forloop.counter0 }}">
+                <div class="nickname">{{ player.nickname }}</div>
+                <div class="status">{{ player.status }}</div>
+                <div class="hand" id="player-{{ forloop.counter0 }}-hand"><!-- let javascript fill the card backs --></div>
+                <div class="hand" id="player-{{ forloop.counter0 }}-tricks"><!-- let javascript fill the face up cards --></div>
+            </div><!-- player -->
+            {% endfor %}
+        </div><!-- players -->
+
+        <div class='game-status' id="game-status">{{ status }}</div>
+        
+        <div class="tableau" id="tableau">
+            <div class="card-box" id="card_box">
+                <div class="card absent" id="current_card"></div>
+                <div class="suit-box" id="suit_box">
+                    <div class="suit cockroach" id="suit-cockroach"></div>
+                    <div class="suit stinkbug" id="suit-stinkbug"></div>
+                    <div class="suit spider" id="suit-spider"></div>
+                    <div class="suit scorpion" id="suit-scorpion"></div>
+                    <div class="suit bat" id="suit-bat"></div>
+                    <div class="suit rat" id="suit-rat"></div>
+                    <div class="suit fly" id="suit-fly"></div>
+                    <div class="suit toad" id="suit-toad"></div>
+                </div><!-- suit-box -->
+            </div><!-- card-box -->
+            <div class="control-box" id="control-box">
+                <div class="control" id="refresh-button">Refresh</div>
+                <div class="control" id="start-button">Start Game</div>
+                <div class="control" id="destroy-button">Destroy Game</div>
+                <div class="control" id="play-button">Play ?? to ?? as ??</div>
+                <div class="control" id="refer-button">Pass card to ?? as ??</div>
+                <div class="control" id="accept-button">Call True</div>
+                <div class="control" id="deny-button">Call False</div>
+            </div><!-- control-box -->
+        </div><!--tableau -->
+        
+        <div class="you" id="you">
+            <div class="hand-box">
+                <div class="hand" id="your-tricks"><!-- let JS etc --></div>
+                <div class="hand" id="your-hand"><!-- let JS etc --></div>
+            </div><!-- hand-box -->
+        </div><!-- you -->
+
+        <div class="msg" id="msg">{{ msg }}</div>
+
+        <form action="{% url 'cockroach:game' tag %}" id="actions-form" method="post">
+        {% csrf_token %}
+        <input type="hidden" id="token-field" name="token" value="{{ token }}">
+        <input type="hidden" id="how-field" name="how" value="whole-page">
+        <input type="hidden" id="move-field" name="move" value="refresh">
+
+        <input type="hidden" id="card_idx" name="card_idx" value="-1">
+        <input type="hidden" id="target" name="target" value="-2">
+        <input type="hidden" id="claim" name="claim" value="-1">
+        <input type="hidden" id="verdict" name="verdict" value="unset">
+        
+        </form>
+
+    </div><!-- container -->
+</div><!-- main -->
+
+<pre id="json_exposed">
+</pre>
+
+<script>    
+$(document).ready(function() {
+    
+    var game_json = '{{ json_state|safe }}';
+    var game_state = JSON.parse(game_json);
+    var target_name = "??";
+    var play_suit = "??";
+    var claim_name = "??";
+    
+    // struggling to suppress Chrome's insistence on caching intermediate state
+    window.history.replaceState({ "token" : "{{ token }}" }, null, "/cockroach/{{ tag }}/");
+    console.log("setting state->token to {{ token }}");
+    
+    window.onpopstate = function (event)
+    {
+        console.log("popstate received");
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        if ( event.state )
+        {
+            console.log("event state is non-null");
+            
+            if  ("token" in event.state)
+            {
+                console.log("token in in event.state");
+                
+                if (event.state["token"] != "nobody")
+                {
+                    console.log("token is not nobody");
+                    $("#token-field").val(event.state["token"]);
+                }
+            }
+        }
+        
+        ajax_submit(true);
+    };
+    
+    function clear_local_state ()
+    {
+        target_name = "??";
+        play_suit = "??";
+        claim_name = "??";
+        
+        $("#card_idx").val(-1);
+        $("#target").val(-2);
+        $("#claim").val(-1);
+        $("#verdict").val("unset");
+        $(".chosen").removeClass("chosen");
+        
+        update_buttons();
+    }
+        
+    function sync_to_game_state ( state )
+    {
+        $("#json_exposed").html(JSON.stringify(state));
+        
+        $("#game-status").html(state["status"]);
+
+        clear_local_state();
+        
+        $("#msg").html(state["msg"]);
+        if ( state["msg"] == "" )
+        {
+            $("#msg").hide();
+        }
+        else
+        {
+            $("#msg").show();
+        }
+        
+        if ( state["stage"] == "Gathering" )
+        {
+            $("#card_box").hide();
+            $("#you").hide();
+        }
+        else
+        {
+            $("#card_box").show();
+            $("#you").show();
+        }
+        
+        if ( "players" in state )
+        {
+            var contents = [];
+            for ( let ii = 0; ii < state["players"].length; ++ii )
+            {
+                contents.push('<div class="player');
+                if ( state["players"][ii]["nickname"] == state["your_nickname"] )
+                {
+                    contents.push(' player-is-you');
+                }
+                contents.push('" id="player-' + ii + '">');
+                contents.push('<div class="nickname">' + state["players"][ii]["nickname"] + "</div>");
+                contents.push('<div class="status">' + state["players"][ii]["status"] + "</div>");
+                
+                contents.push('<div class="hand" id="player-' + ii + '-hand">');
+                for ( let jj = 0; jj < state["players"][ii]["hand_size"]; ++jj )
+                {
+                    contents.push('<div class="card back');
+                    
+                    if ( jj > 0 )
+                    {
+                        contents.push(' adjacent');
+                    }
+                    
+                    contents.push('"></div>');
+                }
+                contents.push('</div>'); // hand
+                
+                contents.push('<div class="hand" id="player-' + ii + '-tricks">');                
+                
+                let prev = -1;
+                
+                for ( let jj = 0; jj < state["players"][ii]["tricks"].length; ++jj )
+                {
+                    let cc = state["players"][ii]["tricks"][jj];
+                    contents.push('<div class="card ' + state["suits"][cc]);
+                    if ( cc == prev )
+                    {
+                        contents.push(' adjacent');
+                    }
+                    contents.push('"></div>');
+                    prev = cc;
+                }
+                
+                contents.push('</div></div>'); // hand, player
+            }
+            
+            $("#players").html(contents.join(""));
+        }
+        
+        if ( "your_nickname" in state )
+        {   
+            var contents = [];
+            let prev = -1;
+            
+            for ( let ii = 0; ii < state["your_hand"].length; ++ii )
+            {
+                let cc = state["your_hand"][ii];
+                contents.push('<div class="card ' + state["suits"][cc]);
+                if ( cc == prev )
+                {
+                    contents.push(' adjacent');
+                }
+                contents.push('" id="your-card-' + ii + '"></div>');
+                prev = cc;
+            }
+            
+            $("#your-hand").html(contents.join(""));
+
+            contents = [];
+            prev = -1;
+
+            for ( let ii = 0; ii < state["your_tricks"].length; ++ii )
+            {
+                let cc = state["your_tricks"][ii];
+                contents.push('<div class="card ' + state["suits"][cc]);
+                if ( cc == prev )
+                {
+                    contents.push(' adjacent');
+                }
+                contents.push('"></div>');
+                prev = cc;
+            }
+
+            
+            $("#your-tricks").html(contents.join(""));
+            $("#current_card").removeClass("back absent cockroach stinkbug spider scorpion bat rat fly toad").addClass(state["card"]);
+            
+            // controls
+
+            if (state["actions"].includes("peek"))
+            {
+                $("#current_card").off("click").click( do_peek );
+                $("#current_card").css("cursor", "pointer");
+            }
+            else
+            {
+                $("#current_card").off("click");
+                $("#current_card").css("cursor", "default");
+            }
+
+            if (state["actions"].includes("start")) { $("#start-button").show(); }
+            else { $("#start-button").hide(); }
+            
+            if (state["actions"].includes("play"))
+            {
+                $("#play-button").off("click").click(function () { do_play(); }).show();
+                
+                for ( let ii = 0; ii < state["your_hand"].length; ++ii )
+                {
+                    let cc = state["your_hand"][ii];
+                    let name = state["suits"][cc];
+                    
+                    $("#your-card-" + ii).off("click").click( function () { set_playing_card ( ii, name ); } );
+                    $("#your-card-" + ii).css("cursor", "pointer");
+                }
+            }
+            else
+            {
+                $("#play-button").off("click").hide();
+            }
+
+            if (state["actions"].includes("refer"))
+            {
+                $("#refer-button").off("click").click(function () { do_refer(); }).show();
+            }
+            else
+            {
+                $("#refer-button").off("click").hide();
+            }
+            
+            if ("referrable" in state)
+            {
+                for ( let ii = 0; ii < state["players"].length; ++ii )
+                {
+                    if (state["referrable"].includes(ii) )
+                    {
+                        $("#player-" + ii).off("click").click( function () { set_target( ii, state["players"][ii].nickname ); } );
+                        $("#player-" + ii).css("cursor", "pointer");
+                    }
+                    else
+                    {
+                        $("#player-" + ii).off("click");
+                        $("#player-" + ii).css("cursor", "default");
+                    }
+                }
+                
+                if ( state["referrable"].length == 1 )
+                {
+                    let sole_target = state["referrable"][0];
+                    set_target( sole_target, state["players"][sole_target].nickname );
+                }
+                
+                for ( let ii = 0; ii < state["suits"].length; ++ii )
+                {
+                    $("#suit-" + state["suits"][ii]).off("click").click( function () { set_claim( ii, state["suits"][ii] ); } );
+                }
+                
+                $("#suit_box").show();
+
+            }
+            else
+            {
+                $(".player").css("cursor", "default");
+                $(".player").css("cursor", "default");
+                $("#suit_box").hide();
+            }
+            
+            if (state["actions"].includes("call"))
+            {
+                $("#accept-button").off("click").click( function () { do_call("yes"); } ).show();
+                $("#deny-button").off("click").click( function () { do_call("no"); } ).show();
+            }
+            else
+            {
+                $("#accept-button").off("click").hide();
+                $("#deny-button").off("click").hide();
+            }
+
+            if (state["actions"].includes("destroy")) { $("#destroy-button").show(); }
+            else { $("#destroy-button").hide(); }
+        }
+        else
+        {
+            $("#you").hide();
+        }
+        
+    }
+    
+    function submit_move ()
+    {
+        ajax_submit();
+    }
+    
+    function hard_refresh ()
+    {
+        $("#move-field").val("refresh");
+        document.querySelector("#how-field").value = "whole-page";
+        document.querySelector("#actions-form").submit()
+    }
+    
+    function do_play ()
+    {
+        if ( target_name != "??" && claim_name != "??" && play_suit != "??" )
+        {
+            $("#move-field").val("play");
+            submit_move();
+        }
+    }
+    
+    function do_refer ()
+    {
+        if ( target_name != "??" && claim_name != "??" )
+        {
+            $("#move-field").val("play");
+            submit_move();
+        }
+        
+        $("#move-field").val("refer");
+        submit_move();
+    }
+    
+    function do_call ( verdict )
+    {
+        $("#verdict").val(verdict);
+        $("#move-field").val("call");
+        submit_move();        
+    }
+    
+    function do_peek ()
+    {
+        $("#move-field").val("peek");
+        submit_move();
+    }
+    
+    function soft_refresh ()
+    {
+        ajax_submit(true);
+    }
+    
+    function ajax_submit(refresh=false)
+    {
+        if ( refresh )
+        {
+            $("#move-field").val("refresh");
+        }
+        success_func = refresh ? function (response) { sync_to_game_state(response) } : function (response) {};
+        
+        document.querySelector("#how-field").value = "json";
+        
+        $.ajax({ type: 'POST',
+                 url: $("form").attr("action"),
+                 data: $("form").serialize(),
+                 success: success_func,
+        });    
+    }
+
+    $("#refresh-button").off("click").click(soft_refresh);
+    $("#start-button").off("click").click( function () {
+            $("#move-field").val("start");
+            submit_move();
+    });
+    $("#destroy-button").off("click").click( function () {
+            $("#move-field").val("destroy");
+            submit_move();
+    });
+    
+    function update_buttons()
+    {
+        $("#play-button").html("Play " + play_suit + " to " + target_name + " as " + claim_name);
+        $("#refer-button").html("Pass card to " + target_name + " as " + claim_name);
+    }
+    
+    function set_claim ( idx, name )
+    {
+        $(".suit.chosen").removeClass("chosen");
+        $("#suit-" + name).addClass("chosen");
+        $("#claim").val(idx);
+        claim_name = name;
+        update_buttons();
+    }
+        
+    function set_target ( idx, name )
+    {
+        $(".player.chosen").removeClass("chosen");
+        $("#player-" + idx).addClass("chosen");
+        $("#target").val(idx);
+        target_name = name;
+        update_buttons();
+    }
+    
+    function set_playing_card ( idx, name )
+    {
+        $(".card.chosen").removeClass("chosen");
+        $("#your-card-" + idx).addClass("chosen");
+        $("#card_idx").val(idx);
+        play_suit = name;
+        update_buttons();
+        
+        $("#current_card").removeClass("back absent cockroach stinkbug spider scorpion bat rat fly toad").addClass(name);
+    }
+    
+    var es = new ReconnectingEventSource('/events/{{ tag }}/');
+
+    es.addEventListener('message', function (e) {
+        console.log(e.data);
+        var dat = JSON.parse(e.data);
+        if (dat["text"] == "index")
+        {
+            window.location.replace("/cockroach/");
+        }
+        else if (dat["text"] == "refresh")
+        {
+             ajax_submit(true);
+        }
+        else
+        {
+            console.log("unknown event: '" + e.data + "'");
+        }
+        
+    }, false);
+
+    es.addEventListener('stream-reset', function (e) { console.log(e.data); }, false);
+
+    sync_to_game_state ( game_state );
+});    
+</script>
+
+</body>
+</html>

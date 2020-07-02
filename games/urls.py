@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('skull/', include('skull.urls')),
     path('nothanks/', include('nothanks.urls')),
+    path('cockroach/', include('cockroach.urls')),
 ]

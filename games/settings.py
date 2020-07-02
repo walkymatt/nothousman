@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'home.apps.HomeConfig',
     'skull.apps.SkullConfig',
     'nothanks.apps.NothanksConfig',
+    'cockroach.apps.CockroachConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

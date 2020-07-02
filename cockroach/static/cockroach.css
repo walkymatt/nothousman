@@ -1,0 +1,381 @@
+body
+{
+	margin:0px;
+	background:#222;
+	font-family: Verdana, san-serif;
+	font-size: large;
+	color: #fdd;
+}
+
+h1, h2
+{
+    color: #fdd;
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+}
+
+.container
+{
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.join-box
+{
+    border: 3px solid red;
+    padding: 30px;
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.join-chunk
+{
+    text-align: center;
+    max-width: 200px;
+    margin: 1em;
+}
+
+.join-field
+{
+    width: 150px;
+    border: 1px #fff;
+    color: #fff;
+}
+
+.game-status
+{
+    font-size: large;
+    font-weight: 600;
+    color: #aa7;
+    margin-top: 0.5em;
+    margin-bottom: 1em;
+    text-align: center;
+    max-width: 800px;
+}
+
+.points
+{
+    font-size: x-large;
+    margin-top: 0.25em;
+}
+
+.msg
+{
+    font-size: large;
+    color: #f88;
+    padding: 0.5em;
+    margin: 0.5em;
+    background-color: #800;
+    border: 1px solid #444;
+}
+
+
+.players
+{
+    font-size: x-large;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+/*    padding: 0.1em;
+    border: 1px solid white; */
+}
+
+.player
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;  
+    background-color:#111;
+    margin: 0.5em;
+    padding: 0.25em;
+    border: 1px solid #555;
+    min-width: 8em;
+    min-height: 8.2em;
+}
+
+.player-is-you
+{
+    border-color: #474;
+    background-color: #121;
+}
+
+.nickname
+{
+    font-weight: 600;
+/*    color: #ff0; */
+}
+
+.status
+{
+    height: 1.5em;
+    font-size: 1.2em;
+    font-weight: 400;
+    color: #6ad;
+    margin: 0.2em;
+}
+
+
+.you
+{
+    font-size: 80px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;  
+    padding: 0em;
+    min-width: 8em;
+    max-width: 10em;
+}
+
+
+.hand-box
+{
+/*    width:5em;
+    height:3em; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+/*    border: 1px solid #fff; */
+    margin-left: 0.1em;
+    margin-right: 0.1em;
+}
+
+.control-box
+{
+    font-size: large;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;  
+    height: 1.5em;
+    margin: 1em;
+    margin-top: 2em;
+}
+
+.control
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;  
+    border: 1px solid #88a;
+    background-color:#226;
+    height:1.2em;
+    margin: 0.25em;
+    padding: 0.2em;
+    color: #aaf;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.hand
+{
+    font-size: medium;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 3em;
+}
+
+.hand-row
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;  
+}
+
+#your-hand
+{
+    font-size: xx-large;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #666;
+    border: 1px solid #888;
+    min-width: 200px;
+}
+
+.tableau
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;  
+}
+
+
+.card-box
+{
+    font-size: 70px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;  
+}
+
+.decksize
+{
+    font-size: x-large;
+    padding: 1em;
+}
+
+
+.card
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;  
+    
+    border: 0.125em solid #000;
+    color: #fff;
+    background-color: #f92;
+    border-radius: 0.3em;
+    width: 2em;
+    height: 3em;
+    font-weight: 600;
+    /*padding: 2px; */
+    margin: 2px;
+}
+
+.suit-box
+{
+    font-size: 25px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    width: 10em;
+    margin-left: 20px;
+}
+
+.suit
+{
+    border: 0.125em solid #000;
+    background-color: #000;
+    border-radius: 0;
+    width: 2em;
+    height: 3em;
+    margin: 2px;
+    cursor: pointer;
+}
+
+.adjacent
+{
+    margin-left: -1.4em;
+}
+
+.back
+{
+    background-color: #555;
+    border-color: #777;
+}
+
+.absent
+{
+    background-color: #222;
+    border-color: #000;
+    display: none;
+}
+
+.cockroach
+{
+    background-image: url("cockroach.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #000;
+    border-color: #f00;
+}
+
+.stinkbug
+{
+    background-image: url("stinkbug.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #000;
+    border-color: #0f0;
+}
+
+.spider
+{
+    background-image: url("spider.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #000;
+    border-color: #fa0;
+}
+
+.scorpion
+{
+    background-image: url("scorpion.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #000;
+    border-color: #ee8;
+}
+
+.bat
+{
+    background-image: url("bat.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #000;
+    border-color: #a08;
+}
+
+.rat
+{
+    background-image: url("rat.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #000;
+    border-color: #40f;
+}
+
+.fly
+{
+    background-image: url("fly.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #000;
+    border-color: #09f;
+}
+
+.toad
+{
+    background-image: url("toad.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #000;
+    border-color: #cf0;
+}
+
+#json_exposed
+{
+    display: none;
+}
+
+.chosen
+{
+    border: 0.125em dotted #fff;
+}
+
+
