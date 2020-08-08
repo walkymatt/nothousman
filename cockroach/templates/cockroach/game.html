@@ -20,6 +20,7 @@
             <div class="player" id="player-{{ forloop.counter0 }}">
                 <div class="nickname">{{ player.nickname }}</div>
                 <div class="status">{{ player.status }}</div>
+                <div class="player-claim">{{ player.claim }}</div>
                 <div class="hand" id="player-{{ forloop.counter0 }}-hand"><!-- let javascript fill the card backs --></div>
                 <div class="hand" id="player-{{ forloop.counter0 }}-tricks"><!-- let javascript fill the face up cards --></div>
             </div><!-- player -->
@@ -175,6 +176,12 @@ $(document).ready(function() {
                 contents.push('" id="player-' + ii + '">');
                 contents.push('<div class="nickname">' + state["players"][ii]["nickname"] + "</div>");
                 contents.push('<div class="status">' + state["players"][ii]["status"] + "</div>");
+                contents.push('<div class="player-claim">' +
+                    ((state["players"][ii]["claim"] < 0)
+                        ? "&nbsp;"
+                        : (state["players"][ii]["seen"] ? "" : "(unseen) ")
+                          + "to " + state["players"][state["players"][ii]["target"]]["nickname"] + " as " + state["suits"][state["players"][ii]["claim"]] )
+                    + "</div>");
                 
                 contents.push('<div class="hand" id="player-' + ii + '-hand">');
                 for ( let jj = 0; jj < state["players"][ii]["hand_size"]; ++jj )
@@ -315,12 +322,19 @@ $(document).ready(function() {
                     set_target( sole_target, state["players"][sole_target].nickname );
                 }
                 
-                for ( let ii = 0; ii < state["suits"].length; ++ii )
+                if ( state["referrable"].length == 0 )
                 {
-                    $("#suit-" + state["suits"][ii]).off("click").click( function () { set_claim( ii, state["suits"][ii] ); } );
+                    $("#suit_box").hide();
                 }
+                else
+                {
+                    for ( let ii = 0; ii < state["suits"].length; ++ii )
+                    {
+                        $("#suit-" + state["suits"][ii]).off("click").click( function () { set_claim( ii, state["suits"][ii] ); } );
+                    }
                 
-                $("#suit_box").show();
+                    $("#suit_box").show();
+                }
 
             }
             else
